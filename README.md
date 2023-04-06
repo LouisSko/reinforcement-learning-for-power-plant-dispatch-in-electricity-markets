@@ -30,7 +30,7 @@ Explain special stuff here (e.g., things an evaluator has to know to evaluate yo
 	├── models								<-- dump models here
 	├── notebooks							<-- your playground for juptyer notebooks
 	├── requirements.txt 					<-- required packages to run your submission (use a virtualenv!)
-	└── src
+	├── src
 	    ├── additional_features.py 			<-- your creation of additional features/data goes here
 	    ├── predict.py 						<-- your prediction script goes here
 	    ├── preprocessing.py 				<-- your preprocessing script goes here
