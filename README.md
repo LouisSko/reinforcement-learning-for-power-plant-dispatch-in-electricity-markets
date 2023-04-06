@@ -34,6 +34,9 @@ Explain special stuff here (e.g., things an evaluator has to know to evaluate yo
 	    ├── additional_features.py 			<-- your creation of additional features/data goes here
 	    ├── predict.py 						<-- your prediction script goes here
 	    ├── preprocessing.py 				<-- your preprocessing script goes here
-	    └── train.py 						<-- your training script goes here
+	    ├── train.py 						<-- your training script goes here
+        └── demo.py                       <-- demo script
+    └── tests
+        └── test_demo.py                  <-- demo script for unittest                
 	
 ```
