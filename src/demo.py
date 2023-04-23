@@ -14,5 +14,5 @@ def say_hello(name: str) -> str:
 
 if __name__ == '__main__':
     
-    greeting = say_hello(name='alex')
+    greeting = say_hello(name='louis')
     print(greeting)

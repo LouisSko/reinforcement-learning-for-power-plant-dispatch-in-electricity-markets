@@ -4,9 +4,9 @@ Please use this template for submitting your case challenge.
 Please only submit code and no datasets or models because the storage capacities are limited.
 
 ## Group Members: 
-- Forename: Random
-- Surname: Dude
-- Matriculation Number: XXXXXX
+- Forename: Louis
+- Surname: Skowronek
+- Matriculation Number: 2222726
 
 - Forename: Another
 - Surname: Dude
