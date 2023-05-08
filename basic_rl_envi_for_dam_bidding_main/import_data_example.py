@@ -33,7 +33,7 @@ def get_demand(start, end):
 def get_vre(start, end):
     """
         Do some data manipulation from export from ENTSO-E, so get ready for the observation space
-        TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc. 
+        TODO Check the validity of ENTSO-E data, like are the renewable generation values always below the installed capacity, is the data complete etc.
 
         Returns:
         Renewable Infeed array for specified start and end date
@@ -67,7 +67,7 @@ def get_gen(start, end):
 def get_mcp(start, end):
     """
         Do some data manipulation from export from ENTSO-E, so get ready for the observation space
-        
+
         Returns:
         Day-Ahead market price array for specified start and end date
 
@@ -75,6 +75,7 @@ def get_mcp(start, end):
 
     # methods that return Pandas Series
     df_prices = pd.DataFrame(client.query_day_ahead_prices(country_code, start=start, end=end))
+
 
     # YOUR CODE
 
@@ -92,5 +93,4 @@ def get_states_list(start, end):
     """
 
     # YOUR CODE
-
     return df_states.index

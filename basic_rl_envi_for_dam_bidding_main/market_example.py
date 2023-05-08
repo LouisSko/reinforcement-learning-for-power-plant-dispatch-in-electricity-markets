@@ -8,7 +8,6 @@ def market_clearing(self, bid_price, bid_volume, date):
         Return: overall profit received from market in EUR and realised market price in EUR/MWh
     '''
 
-
     # calculate revenue
     
     if bid_price <= self.prices[date]:

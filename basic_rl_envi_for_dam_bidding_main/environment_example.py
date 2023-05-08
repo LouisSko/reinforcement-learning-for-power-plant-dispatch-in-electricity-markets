@@ -82,7 +82,7 @@ class market_env(gym.Env):
 
 
     #function that sampels days from the data
-    def _observe_state(self, date):
+    def observe_state(self, date):
 
         """
                 Method that puts together all the forecasted information of the market
@@ -159,8 +159,7 @@ class market_env(gym.Env):
         return observation, round(reward,4), is_terminal, info
 
 
-
-    def reset (self):
+    def reset(self):
         """
             The first method called before the experiment starts, as it resets the environment.
             Also it is called between different learning session, alias tryiing out new algorithms etc
