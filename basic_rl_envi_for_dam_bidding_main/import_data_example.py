@@ -14,11 +14,19 @@ client = EntsoePandasClient(api_key=your_key)
 
 def get_demand(start, end):
     """
-        Do some data manipulation from export from ENTSO-E, so get ready for the observation space
-        TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc. 
+    Day-ahead Total Load Forecast
 
-        Returns:
-        Demand array for specified start and end date
+    Quelle:
+    https://transparency.entsoe.eu/load-domain/r2/totalLoadR2/show?name=&defaultValue=false&viewType=TABLE&areaType=CTY&atch=false&dateTime.dateTime=09.05.2023+00:00|CET|DAY&biddingZone.values=CTY|10YLU-CEGEDEL-NQ!CTY|10YLU-CEGEDEL-NQ&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2)
+    LU+DE muss ausgewählt werden -> dann stimmen die Werte
+
+    Do some data manipulation from export from ENTSO-E, so get ready for the observation space
+    TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc.
+
+
+
+    Returns:
+    Demand array for specified start and end date
 
     """
 
@@ -32,8 +40,15 @@ def get_demand(start, end):
 
 def get_vre(start, end):
     """
+        Day-ahead Generation Forecasts for Wind and Solar
+
+        Quelle
+        https://transparency.entsoe.eu/generation/r2/dayAheadGenerationForecastWindAndSolar/show?name=&defaultValue=false&viewType=TABLE&areaType=CTY&atch=false&dateTime.dateTime=09.05.2023+00:00|CET|DAYTIMERANGE&dateTime.endDateTime=09.05.2023+00:00|CET|DAYTIMERANGE&area.values=CTY|10Y1001A1001A83F!CTY|10Y1001A1001A83F&productionType.values=B16&productionType.values=B18&productionType.values=B19&processType.values=A18&processType.values=A01&processType.values=A40&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2)
+
+
         Do some data manipulation from export from ENTSO-E, so get ready for the observation space
         TODO Check the validity of ENTSO-E data, like are the renewable generation values always below the installed capacity, is the data complete etc.
+
 
         Returns:
         Renewable Infeed array for specified start and end date
@@ -48,8 +63,13 @@ def get_vre(start, end):
 
 
 def get_gen(start, end):
-
     """
+    Day-ahead Aggregated Generation
+
+    Quelle:
+    https://transparency.entsoe.eu/generation/r2/dayAheadAggregatedGeneration/show?name=&defaultValue=false&viewType=TABLE&areaType=CTY&atch=false&datepicker-day-offset-select-dv-date-from_input=D&dateTime.dateTime=09.05.2023+00:00|CET|DAYTIMERANGE&dateTime.endDateTime=09.05.2023+00:00|CET|DAYTIMERANGE&area.values=CTY|10Y1001A1001A83F!CTY|10Y1001A1001A83F&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2)
+
+
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
     TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc.
 
@@ -66,11 +86,11 @@ def get_gen(start, end):
 
 def get_mcp(start, end):
     """
-        Do some data manipulation from export from ENTSO-E, so get ready for the observation space
+    Do some data manipulation from export from ENTSO-E, so get ready for the observation space
 
-        Returns:
-        Day-Ahead market price array for specified start and end date
-
+    Returns:
+    Day-Ahead market price array for specified start and end date
+    in EUR/MWh
     """
 
     # methods that return Pandas Series
@@ -87,8 +107,8 @@ def get_states_list(start, end):
         
     TODO
 
-        Returns:
-        Gives a lists of all datetimes for which we have all data
+    Returns:
+    Gives a lists of all datetimes for which we have all data
 
     """
 
