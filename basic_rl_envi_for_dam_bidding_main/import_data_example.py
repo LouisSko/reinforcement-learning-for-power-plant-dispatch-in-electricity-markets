@@ -48,13 +48,13 @@ def get_vre(start, end):
 
 
 def get_gen(start, end):
+
     """
-        Do some data manipulation from export from ENTSO-E, so get ready for the observation space
-        TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc. 
+    Do some data manipulation from export from ENTSO-E, so get ready for the observation space
+    TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc.
 
-        Returns:
-        Renewable Infeed array for specified start and end date
-
+    Returns:
+    Renewable Infeed array for specified start and end date
     """
 
     df_gen_prog = pd.DataFrame(client.query_generation_forecast(country_code, start=start, end=end))
