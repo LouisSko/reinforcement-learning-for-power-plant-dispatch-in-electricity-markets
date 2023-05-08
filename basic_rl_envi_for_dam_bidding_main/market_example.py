@@ -1,6 +1,5 @@
 import numpy as np
 
-
 # define how the market is cleared
 def market_clearing(self, bid_price, bid_volume, date):
     '''

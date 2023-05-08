@@ -8,7 +8,7 @@ import datetime
 from datetime import timedelta
 
 #get definitions from other files
-from market import market_clearing
+from market_example import market_clearing
 
 #define the market environment
 class market_env(gym.Env):
