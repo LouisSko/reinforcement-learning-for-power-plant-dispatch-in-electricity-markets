@@ -11,7 +11,6 @@ country_code = 'DE_LU'  # Germany-Luxembourg
 
 client = EntsoePandasClient(api_key=your_key)
 
-
 def get_demand(start, end):
     """
     Day-ahead Total Load Forecast
