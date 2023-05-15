@@ -2,6 +2,7 @@ from entsoe import EntsoePandasClient
 import pandas as pd
 from datetime import datetime
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
 # you need to get a key to access the API
 # you can ask for it here https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html
@@ -10,6 +11,7 @@ your_key = '9ab2e188-d454-44be-bce7-ea9dc8863723'
 country_code = 'DE_LU'  # Germany-Luxembourg
 
 client = EntsoePandasClient(api_key=your_key)
+
 
 def get_demand(start, end):
     """
@@ -21,15 +23,24 @@ def get_demand(start, end):
 
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
     TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc.
+
     Returns:
     Demand array for specified start and end date
     """
+
+
     # load data from ENTSO-E API
     df_load_prog = pd.DataFrame(client.query_load_forecast(country_code, start=start, end=end))
 
-    # YOUR CODE
+    df_load_prog.columns = ['forecasted_load [MWh]']
 
-    return df_load_prog
+    # YOUR CODE
+    scaler = MinMaxScaler((0, 1))
+    df_load_prog_scaled = pd.DataFrame(scaler.fit_transform(df_load_prog), columns=['forecasted_load [MWh]'])
+
+    df_load_prog_scaled.index = df_load_prog.index
+
+    return df_load_prog, df_load_prog_scaled
 
 
 def get_vre(start, end):
@@ -50,10 +61,15 @@ def get_vre(start, end):
     """
     # load data from ENTSO-E API
     df_re_prog = pd.DataFrame(client.query_wind_and_solar_forecast(country_code, start=start, end=end, psr_type=None))
+    df_re_prog.columns = ['Forecasted Solar [MWh]', 'Forecasted Wind Offshore [MWh]', 'Forecasted Wind Onshore [MWh]']
 
     # YOUR CODE
+    scaler = MinMaxScaler((0, 1))
+    df_re_prog_scaled = pd.DataFrame(scaler.fit_transform(df_re_prog), columns=['Forecasted Solar [MWh]', 'Forecasted Wind Offshore [MWh]', 'Forecasted Wind Onshore [MWh]'])
 
-    return df_re_prog
+    df_re_prog_scaled.index = df_re_prog.index
+
+    return df_re_prog, df_re_prog_scaled
 
 
 def get_gen(start, end):
@@ -73,9 +89,12 @@ def get_gen(start, end):
 
     df_gen_prog = pd.DataFrame(client.query_generation_forecast(country_code, start=start, end=end))
 
-    # YOUR CODE
+    scaler = MinMaxScaler((0, 1))
+    df_gen_prog_scaled = pd.DataFrame(scaler.fit_transform(df_gen_prog), columns=['Actual Aggregated'])
 
-    return df_gen_prog
+    df_gen_prog_scaled.index = df_gen_prog.index
+
+    return df_gen_prog, df_gen_prog_scaled
 
 
 def get_mcp(start, end):
@@ -90,7 +109,6 @@ def get_mcp(start, end):
     # methods that return Pandas Series
     df_prices = pd.DataFrame(client.query_day_ahead_prices(country_code, start=start, end=end))
 
-
     # YOUR CODE
 
     return df_prices
@@ -98,7 +116,7 @@ def get_mcp(start, end):
 
 def get_states_list(start, end):
     """
-        
+
     TODO
 
     Returns:

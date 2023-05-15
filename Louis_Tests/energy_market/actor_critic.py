@@ -22,9 +22,8 @@ class ActorCriticAgent:
         _, probs = self.model(state)
         action_dist = torch.distributions.Categorical(probs=probs)
         action = action_dist.sample()
-        # action = torch.full((24,), 0)
         self.action = action
-        return np.array(action)  #
+        return np.array(action)
 
     def save_models(self):
         print('... saving models ...')

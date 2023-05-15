@@ -1,6 +1,6 @@
 import torch.nn as nn
 import os
-
+import torch.nn.functional as F
 
 class ActorCritic(nn.Module):
     def __init__(self, input_size, n_actions, n_neurons1=256, n_neurons2=128, name='actor_critic',
