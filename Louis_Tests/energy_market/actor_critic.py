@@ -1,6 +1,7 @@
 import torch
 from networks import ActorCritic
 from torch import optim
+import numpy as np
 
 
 class ActorCriticAgent:
@@ -21,9 +22,9 @@ class ActorCriticAgent:
         _, probs = self.model(state)
         action_dist = torch.distributions.Categorical(probs=probs)
         action = action_dist.sample()
-        #action = torch.full((24,), 0)
+        # action = torch.full((24,), 0)
         self.action = action
-        return action  # returns 24 actions, one for each hour
+        return np.array(action)  #
 
     def save_models(self):
         print('... saving models ...')
@@ -53,7 +54,3 @@ class ActorCriticAgent:
 
         total_loss.backward()
         self.optimizer.step()
-
-
-
-
