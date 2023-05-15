@@ -32,7 +32,7 @@ class market_env(gym.Env):
         self.re_gen = re
         self.prices = prices
 
-        # factor by which the rewrad is scaled, so that we have a reward around 0
+        # factor by which the rewad is scaled, so that we have a reward around 0
         self.reward_scaling = reward_scaling
 
         # get data technical data for the agent

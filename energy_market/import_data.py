@@ -1,16 +1,28 @@
 from entsoe import EntsoePandasClient
 import pandas as pd
-from datetime import datetime
-import numpy as np
+import os
 from sklearn.preprocessing import MinMaxScaler
 
 # you need to get a key to access the API
 # you can ask for it here https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html
 # the instructions are given below chapter "2. Authentication and Authorisation"
-your_key = '9ab2e188-d454-44be-bce7-ea9dc8863723'
+
+# your_key = '9ab2e188-d454-44be-bce7-ea9dc8863723'
+your_key = '3a72c137-c318-4dd5-ac00-2d3be87966a8'
+
 country_code = 'DE_LU'  # Germany-Luxembourg
 
 client = EntsoePandasClient(api_key=your_key)
+
+# set directory and define the file paths
+parent_directory = os.path.join('..', 'data', 'preprocessed')
+df_demand_path = os.path.join(parent_directory, 'df_demand.pkl')
+df_demand_scaled_path = os.path.join(parent_directory, 'df_demand_scaled.pkl')
+df_vre_path = os.path.join(parent_directory, 'df_vre.pkl')
+df_vre_scaled_path = os.path.join(parent_directory, 'df_vre_scaled.pkl')
+df_gen_path = os.path.join(parent_directory, 'df_gen.pkl')
+df_gen_scaled_path = os.path.join(parent_directory, 'df_gen_scaled.pkl')
+df_mcp_path = os.path.join(parent_directory, 'df_mcp.pkl')
 
 
 def get_demand(start, end):
@@ -96,7 +108,6 @@ def get_gen(start, end):
     Quelle:
     https://transparency.entsoe.eu/generation/r2/dayAheadAggregatedGeneration/show?name=&defaultValue=false&viewType=TABLE&areaType=CTY&atch=false&datepicker-day-offset-select-dv-date-from_input=D&dateTime.dateTime=09.05.2023+00:00|CET|DAYTIMERANGE&dateTime.endDateTime=09.05.2023+00:00|CET|DAYTIMERANGE&area.values=CTY|10Y1001A1001A83F!CTY|10Y1001A1001A83F&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2)
 
-
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
     TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc.
 
@@ -149,3 +160,47 @@ def drop_incomplete_datapoints(df):
     # TODO Funktion abändern, sodass Schaltjahre berücksichtigt werden in den Daten
     df = df.groupby(df.index.date).filter(lambda x: len(x) == 24)
     return df
+
+
+def get_data(start=None, end=None, store=True):
+    # set start and end date if not provided
+    if start is None:
+        start = pd.Timestamp(year=2018, month=1, day=1, tz="europe/brussels")
+    if end is None:
+        end = pd.Timestamp.now(tz="europe/brussels").floor('D') + pd.Timedelta(days=2)
+
+    # get data
+    df_demand, df_demand_scaled = get_demand(start, end)
+    df_vre, df_vre_scaled = get_vre(start, end)
+    df_gen, df_gen_scaled = get_gen(start, end)
+    df_mcp = get_mcp(start, end)
+
+    if store:
+        # create directory if it does not exist
+        os.makedirs(parent_directory, exist_ok=True)
+
+        # Storing DataFrames as CSV files
+        df_demand.to_pickle(df_demand_path)
+        df_demand_scaled.to_pickle(df_demand_scaled_path)
+        df_vre.to_pickle(df_vre_path)
+        df_vre_scaled.to_pickle(df_vre_scaled_path)
+        df_gen.to_pickle(df_gen_path)
+        df_gen_scaled.to_pickle(df_gen_scaled_path)
+        df_mcp.to_pickle(df_mcp_path)
+
+
+def read_processed_files():
+    # Read the pickle files and load as DataFrames
+    df_demand = pd.read_pickle(df_demand_path)
+    df_demand_scaled = pd.read_pickle(df_demand_scaled_path)
+    df_vre = pd.read_pickle(df_vre_path)
+    df_vre_scaled = pd.read_pickle(df_vre_scaled_path)
+    df_gen = pd.read_pickle(df_gen_path)
+    df_gen_scaled = pd.read_pickle(df_gen_scaled_path)
+    df_mcp = pd.read_pickle(df_mcp_path)
+
+    return df_demand, df_demand_scaled, df_vre, df_vre_scaled, df_gen, df_gen_scaled, df_mcp
+
+
+if __name__ == '__main__':
+    get_data()
