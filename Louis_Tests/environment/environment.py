@@ -16,6 +16,7 @@ class PowerPlantEnv(gym.Env):
         self.current_day = 0
         self.hours = 24
         self.state = None
+        self.reward_scaling = 10
 
         self.action_values = [0, np.inf]
         self.action_space = spaces.Discrete(len(self.action_values))
@@ -31,18 +32,18 @@ class PowerPlantEnv(gym.Env):
         return np.array(self.state, dtype=np.float32)
 
     def step(self, action):
-
         # Perform one step in the environment given the action
-
         # calculate reward
-        reward = 0
+        profit = 0
 
         for hour in range(self.hours):
             bid_price = self.action_values[action[hour]]
             bid_volume = self.bid_volume
             actual_price = self.prices.iloc[self.current_day, hour]
-            reward += self.market_clearing(bid_price, bid_volume, actual_price)
+            profit += self.market_clearing(bid_price, bid_volume, actual_price)
 
+        # scale the reward
+        reward = (profit / self.reward_scaling)
         # increase the day by one
         self.current_day += 1
         # next observation

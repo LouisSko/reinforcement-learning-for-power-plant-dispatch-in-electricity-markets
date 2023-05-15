@@ -18,14 +18,13 @@ class ActorCritic(nn.Module):
         self.fc_actor = nn.Linear(n_neurons2, self.n_actions * 24)  # outputs n_actions for each of the 24 hours
 
         self.relu = nn.ReLU()
-        self.softmax = nn.Softmax(dim=-1)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, state):
         value = self.relu(self.fc1(state))
         value = self.relu(self.fc2(value))
 
         v = self.fc_critic(value)
-        pi = self.fc_actor(value)
-        pi = self.softmax(pi)
+        pi = self.softmax(self.fc_actor(value).reshape(24, -1))  # reshape output and apply softmax for each row
 
         return v, pi

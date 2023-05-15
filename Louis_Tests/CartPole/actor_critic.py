@@ -16,6 +16,7 @@ class ActorCriticAgent:
         self.model = ActorCritic(self.input_size, self.n_actions).to(self.device)
         self.optimizer = optim.AdamW(self.model.parameters(), lr=self.lr)
 
+
     def choose_action(self, state):
         state = torch.from_numpy(state).float().to(self.device)
         _, probs = self.model(state)
@@ -24,13 +25,16 @@ class ActorCriticAgent:
         self.action = action
         return action
 
+
     def save_models(self):
         print('... saving models ...')
         torch.save(self.model.state_dict(), self.model.checkpoint_file)
 
+
     def load_models(self):
         print('... loading models ...')
         self.model.load_state_dict(torch.load(self.model.checkpoint_file))
+
 
     def update(self, state, reward, state_next, done):
         state = torch.from_numpy(state).float().to(self.device)

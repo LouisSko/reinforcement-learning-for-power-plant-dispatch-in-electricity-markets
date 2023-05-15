@@ -22,11 +22,8 @@ def get_demand(start, end):
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
     TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc.
 
-
-
     Returns:
     Demand array for specified start and end date
-
     """
 
     # load data from ENTSO-E API
@@ -55,6 +52,7 @@ def get_vre(start, end):
     """
     # load data from ENTSO-E API
     df_re_prog = pd.DataFrame(client.query_wind_and_solar_forecast(country_code, start=start, end=end, psr_type=None))
+    df_re_prog.columns = ['Forecasted Solar [MWh]', 'Forecasted Wind Offshore [MWh]', 'Forecasted Wind Onshore [MWh]']
 
     # YOUR CODE
 
