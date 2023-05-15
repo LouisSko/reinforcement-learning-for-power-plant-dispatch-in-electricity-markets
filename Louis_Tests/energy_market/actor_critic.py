@@ -5,7 +5,7 @@ import numpy as np
 
 
 class ActorCriticAgent:
-    def __init__(self, input_size, n_actions, lr=0.0003, gamma=0.99):
+    def __init__(self, input_size, n_actions, lr=0.00001, gamma=0.99):
         self.input_size = input_size
         self.n_actions = n_actions
         self.lr = lr

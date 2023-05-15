@@ -70,7 +70,7 @@ class market_env(gym.Env):
         # TODO bigger action space, also choose volume
         # TODO ideal would be the submission of a bidding curve as in reality
 
-        self.action_space = Discrete(10, 0)
+        self.action_space = Discrete(50, 0)
 
     # function that sampels days from the data
     def observe_state(self, date):
@@ -114,10 +114,13 @@ class market_env(gym.Env):
         profit, da_price = self.market_clearing(bid_price, bid_volume, self.date)
 
         # scale the reward
-        reward = (profit / self.reward_scaling)
-
-        # reward should add up
-
+        # reward = (profit / self.reward_scaling)
+        if profit > 0:
+            reward = np.log(profit)
+        elif profit < 0:
+            reward = -np.log(-profit)
+        else:
+            reward = 0
 
         # write results
         self.results_ep.loc[self.date] = [round(reward, 4), da_price, bid_price, bid_volume]
@@ -128,7 +131,7 @@ class market_env(gym.Env):
             self.date = self.get_random_new_date()
 
         else:
-            is_terminal = False
+            self.is_terminal = False
             self.iter = self.iter + 1
             self.date = self.date + pd.Timedelta(hours=1)
 
