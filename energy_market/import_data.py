@@ -72,7 +72,7 @@ def get_vre(start, end):
     df_re_prog.columns = ['Forecasted Solar [MWh]', 'Forecasted Wind Offshore [MWh]', 'Forecasted Wind Onshore [MWh]']
 
     # 15 min candles? -> aggregate hourly
-    df_load_prog = aggregate_hourly(df_re_prog)
+    df_re_prog = aggregate_hourly(df_re_prog)
 
     # drop days with incomplete number of observations (!=24) per day. -> leap years
     df_re_prog = drop_incomplete_datapoints(df_re_prog)
@@ -147,7 +147,5 @@ def aggregate_hourly(df):
 def drop_incomplete_datapoints(df):
     # hier werden unter anderem die Daten für Schaltjahre rausgeworfen
     # TODO Funktion abändern, sodass Schaltjahre berücksichtigt werden in den Daten
-    count_per_day = df.groupby(df.index.date).count()
-    incomplete_days = count_per_day[count_per_day != 24].index
-    df = df[~df.index.date.isin(incomplete_days)]
+    df = df.groupby(df.index.date).filter(lambda x: len(x) == 24)
     return df

@@ -4,7 +4,11 @@ import torch.nn.functional as F
 
 class ActorCritic(nn.Module):
     def __init__(self, input_size, n_actions, n_neurons1=256, n_neurons2=128, name='actor_critic',
-                 chkpt_dir='/Users/louis.skowronek/bda-case-challenge/Louis_Tests/checkpoints'):
+                 chkpt_dir=os.path.join(os.getcwd(), 'checkpoints')):
+
+        if not os.path.exists(chkpt_dir):
+            os.makedirs(chkpt_dir)
+
         super().__init__()
         self.input_size = input_size
         self.n_actions = n_actions
