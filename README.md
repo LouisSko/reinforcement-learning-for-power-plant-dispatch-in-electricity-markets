@@ -8,6 +8,10 @@ Please only submit code and no datasets or models because the storage capacities
 - Surname: Skowronek
 - Matriculation Number: 2222726
 
+- Forename: Louis
+- Surname: Karsch
+- Matriculation Number: 2100754
+
 - Forename: Another
 - Surname: Dude
 - Matriculation Number: XXXXXX
