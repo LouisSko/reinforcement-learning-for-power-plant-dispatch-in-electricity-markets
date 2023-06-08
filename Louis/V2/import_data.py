@@ -7,8 +7,8 @@ from sklearn.preprocessing import MinMaxScaler
 # you can ask for it here https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html
 # the instructions are given below chapter "2. Authentication and Authorisation"
 
-# your_key = '9ab2e188-d454-44be-bce7-ea9dc8863723'
-your_key = '3a72c137-c318-4dd5-ac00-2d3be87966a8'
+your_key = '9ab2e188-d454-44be-bce7-ea9dc8863723'
+# your_key = '3a72c137-c318-4dd5-ac00-2d3be87966a8'
 
 country_code = 'DE_LU'  # Germany-Luxembourg
 
@@ -23,7 +23,8 @@ df_vre_scaled_path = os.path.join(parent_directory, 'df_vre_scaled.pkl')
 df_gen_path = os.path.join(parent_directory, 'df_gen.pkl')
 df_gen_scaled_path = os.path.join(parent_directory, 'df_gen_scaled.pkl')
 df_mcp_path = os.path.join(parent_directory, 'df_mcp.pkl')
-
+df_solar_cap_actual_path = os.path.join(parent_directory, 'df_solar_cap_actual.pkl')
+df_solar_cap_forecast_path = os.path.join(parent_directory, 'df_solar_cap_forecast.pkl')
 
 def get_demand(start, end):
     """
@@ -101,9 +102,9 @@ def get_vre(start, end):
     return df_re_prog, df_re_prog_scaled
 
 
-def get_vre_actuals(start, end):
+def get_solar_actual(start, end):
     """
-    Actuals Generation for Wind and Solar
+    Actuals Generation for Solar
 
     Quelle
     https://transparency.entsoe.eu/generation/r2/actualGenerationPerProductionType/show?name=&defaultValue=false&viewType=TABLE&areaType=CTA&atch=false&datepicker-day-offset-select-dv-date-from_input=D&dateTime.dateTime=14.03.2023+00:00|CET|DAYTIMERANGE&dateTime.endDateTime=14.03.2023+00:00|CET|DAYTIMERANGE&area.values=CTY|10Y1001A1001A83F!CTA|10YDE-VE-------2&productionType.values=B01&productionType.values=B02&productionType.values=B03&productionType.values=B04&productionType.values=B05&productionType.values=B06&productionType.values=B07&productionType.values=B08&productionType.values=B09&productionType.values=B10&productionType.values=B11&productionType.values=B12&productionType.values=B13&productionType.values=B14&productionType.values=B20&productionType.values=B15&productionType.values=B16&productionType.values=B17&productionType.values=B18&productionType.values=B19&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2)
@@ -116,25 +117,57 @@ def get_vre_actuals(start, end):
     """
 
     # make api call
-    df_re_prog = pd.DataFrame(client.query_generation(country_code, start=start, end=end, psr_type=None))
-    print(df_re_prog)
+    solar_actual = pd.DataFrame(client.query_generation(country_code, start=start, end=end, psr_type=None))
 
-    # rename columns
-    # df_re_prog.columns = ['Forecasted Solar [MWh]', 'Forecasted Wind Offshore [MWh]', 'Forecasted Wind Onshore [MWh]']
+    # select data
+    solar_actual = solar_actual['Solar'][['Actual Aggregated']].copy()
 
     # 15 min candles? -> aggregate hourly
-    df_re_prog = aggregate_hourly(df_re_prog)
+    solar_actual = aggregate_hourly(solar_actual)
 
     # drop days with incomplete number of observations (!=24) per day. -> leap years
-    df_re_prog = drop_incomplete_datapoints(df_re_prog)
+    solar_actual = drop_incomplete_datapoints(solar_actual)
 
-    # scale data
-    df_re_prog = df_re_prog['Solar']
+    # Group the data by day and apply scaling to each day's values
+    solar_actual['solar_capacity_actual'] = solar_actual.groupby(solar_actual.index.date)[
+        'Actual Aggregated'].transform(lambda x: x / x.sum())
 
-    # set index
-    df_re_prog.index = df_re_prog.index
+    return solar_actual[['solar_capacity_actual']]
 
-    return df_re_prog
+
+def get_solar_estimate(start, end):
+    """
+    Actuals Generation for Solar
+
+    Quelle
+    https://transparency.entsoe.eu/generation/r2/actualGenerationPerProductionType/show?name=&defaultValue=false&viewType=TABLE&areaType=CTA&atch=false&datepicker-day-offset-select-dv-date-from_input=D&dateTime.dateTime=14.03.2023+00:00|CET|DAYTIMERANGE&dateTime.endDateTime=14.03.2023+00:00|CET|DAYTIMERANGE&area.values=CTY|10Y1001A1001A83F!CTA|10YDE-VE-------2&productionType.values=B01&productionType.values=B02&productionType.values=B03&productionType.values=B04&productionType.values=B05&productionType.values=B06&productionType.values=B07&productionType.values=B08&productionType.values=B09&productionType.values=B10&productionType.values=B11&productionType.values=B12&productionType.values=B13&productionType.values=B14&productionType.values=B20&productionType.values=B15&productionType.values=B16&productionType.values=B17&productionType.values=B18&productionType.values=B19&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2)
+
+    Do some data manipulation from export from ENTSO-E, so get ready for the observation space
+    TODO Check the validity of ENTSO-E data, like are the renewable generation values always below the installed capacity, is the data complete etc.
+
+    Returns:
+    Renewable Infeed array for specified start and end date
+    """
+
+    # make api call
+    df_re_prog = pd.DataFrame(client.query_wind_and_solar_forecast(country_code, start=start, end=end, psr_type=None))
+
+    # rename columns
+    df_re_prog.columns = ['Forecasted Solar [MWh]', 'Forecasted Wind Offshore [MWh]', 'Forecasted Wind Onshore [MWh]']
+
+    solar_estimate = df_re_prog[['Forecasted Solar [MWh]']].copy()
+
+    # 15 min candles? -> aggregate hourly
+    solar_estimate = aggregate_hourly(solar_estimate)
+
+    # drop days with incomplete number of observations (!=24) per day. -> leap years
+    solar_estimate = drop_incomplete_datapoints(solar_estimate)
+
+    # Group the data by day and apply scaling to each day's values
+    solar_estimate['solar_capacity_forecast'] = solar_estimate.groupby(solar_estimate.index.date)[
+        'Forecasted Solar [MWh]'].transform(lambda x: x / x.sum())
+
+    return solar_estimate[['solar_capacity_forecast']]
 
 
 def get_gen(start, end):
@@ -193,7 +226,7 @@ def aggregate_hourly(df):
 
 def drop_incomplete_datapoints(df):
     # hier werden unter anderem die Daten für Schaltjahre rausgeworfen
-    # TODO Funktion abändern, sodass Schaltjahre berücksichtigt werden in den Daten
+    # TODO: Funktion abändern, sodass Schaltjahre berücksichtigt werden in den Daten
     df = df.groupby(df.index.date).filter(lambda x: len(x) == 24)
     return df
 
@@ -207,9 +240,17 @@ def get_data(start=None, end=None, store=True):
 
     # get data
     df_demand, df_demand_scaled = get_demand(start, end)
+    print('retrieved demand')
     df_vre, df_vre_scaled = get_vre(start, end)
+    print('retrieved solar, wind')
     df_gen, df_gen_scaled = get_gen(start, end)
+    print('retrieved gen')
     df_mcp = get_mcp(start, end)
+    print('retrieved price')
+    df_solar_cap_actual = get_solar_actual(start, end)
+    print('retrieved solar capacity actual')
+    df_solar_cap_forecast = get_solar_estimate(start, end)
+    print('retrieved solar capacity forecast')
 
     if store:
         # create directory if it does not exist
@@ -223,7 +264,9 @@ def get_data(start=None, end=None, store=True):
         df_gen.to_pickle(df_gen_path)
         df_gen_scaled.to_pickle(df_gen_scaled_path)
         df_mcp.to_pickle(df_mcp_path)
-
+        df_solar_cap_actual.to_pickle(df_solar_cap_actual_path)
+        df_solar_cap_forecast.to_pickle(df_solar_cap_forecast_path)
+        print('saved data')
 
 def read_processed_files():
     # Read the pickle files and load as DataFrames
@@ -234,8 +277,10 @@ def read_processed_files():
     df_gen = pd.read_pickle(df_gen_path)
     df_gen_scaled = pd.read_pickle(df_gen_scaled_path)
     df_mcp = pd.read_pickle(df_mcp_path)
+    df_solar_cap_actual = pd.read_pickle(df_solar_cap_actual_path)
+    df_solar_cap_forecast = pd.read_pickle(df_solar_cap_forecast_path)
 
-    return df_demand, df_demand_scaled, df_vre, df_vre_scaled, df_gen, df_gen_scaled, df_mcp
+    return df_demand, df_demand_scaled, df_vre, df_vre_scaled, df_gen, df_gen_scaled, df_solar_cap_forecast, df_solar_cap_actual, df_mcp
 
 
 if __name__ == '__main__':

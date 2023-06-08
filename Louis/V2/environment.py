@@ -11,29 +11,25 @@ import torch
 # define the market environment
 class market_env(gym.Env):
 
-    def __init__(self, demand, re, prices, eps_length=24, capacity=200, mc=30, reward_scaling=1):
-
+    def __init__(self, demand, re, capacity_forecast, capacity_actual, prices, eps_length=24, capacity=200, mc=30):
         """
-            The customized initialisation of the environment.
-
-            Returns:
 
         """
         # get predefined stuff
         super().__init__()
 
-        self.states_list = set(demand.index) & set(re.index) & set(prices.index)
-        # defineing different points in time of the environment
+        # get rows where all data is available
+        self.states_list = set(demand.index) & set(re.index) & set(capacity_forecast.index) & set(capacity_actual.index) & set(prices.index)
+        # defining different points in time of the environment
         self.time_list_hours = pd.Series(list(self.states_list)).sort_values()
         self.time_list_days = pd.Series(filter(lambda d: (d.hour == 0), self.time_list_hours))
 
-        # define variabels of environment from input data
+        # define variables of environment from input data
         self.demand = demand
         self.re_gen = re
+        self.capacity_forecast = capacity_forecast
+        self.capacity_actual = capacity_actual
         self.prices = prices
-
-        # factor by which the rewad is scaled, so that we have a reward around 0
-        self.reward_scaling = reward_scaling
 
         # get data technical data for the agent
         self.capacity = capacity
@@ -62,7 +58,7 @@ class market_env(gym.Env):
         # Observation[4]: Marginal costs
 
         # expanded shape to incorporate expected forecast
-        self.observation_space = Box(low=np.array([0, 0, 0, 0, 0, 0]), high=np.array([1, 1, 1, 1, 30, 1]),
+        self.observation_space = Box(low=np.array([0, 0, 0, 0, 0, 0]), high=np.array([1, 1, 1, 1, 1, 30]),
                                      shape=(6,))
 
         # define possible ACTIONS:
@@ -92,10 +88,14 @@ class market_env(gym.Env):
         self._sun = self.re_gen['Forecasted Solar [MWh]'].loc[date]
         self._wind_off = self.re_gen['Forecasted Wind Offshore [MWh]'].loc[date]
         self._wind_on = self.re_gen['Forecasted Wind Onshore [MWh]'].loc[date]
+        self._capacity = self.capacity_forecast.loc[date]
 
-        return np.concatenate((self._demand, self._sun,
-                               self._wind_off, self._wind_on, self.mc),
-                              axis=None)
+        return np.concatenate((self._demand,
+                               self._sun,
+                               self._wind_off,
+                               self._wind_on,
+                               self._capacity,
+                               self.mc), axis=None)
 
     def step(self, action):
 
@@ -110,16 +110,22 @@ class market_env(gym.Env):
         # define current state as seen forecasts
         self.observation = self.observe_state(self.date)
 
-        # get bid from action
-        bid_volume = self.capacity
+        # get bids from action
+        action_price = action[0]
+        action_volume = action[1]
 
         # the bid price is relative to the marginal costs
-        bid_price = action / 10 * 2 * self.mc
+        bid_price = action_price / 10 * self.mc
+
+        bid_volume = action_volume * 20
+
+        # TODO: implement bid_volume restriction
+
+
 
         profit, da_price = self.market_clearing(bid_price, bid_volume, self.date)
 
-        # scale the reward
-        # reward = (profit / self.reward_scaling)
+        # define the reward
         # handling rewards close to zero can be problematic.-> add a constant of 1
         if profit > 0:
             reward = np.log(profit + 1)
