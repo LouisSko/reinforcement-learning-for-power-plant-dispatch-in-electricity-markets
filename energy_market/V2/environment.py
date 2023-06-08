@@ -22,7 +22,7 @@ class market_env(gym.Env):
         self.states_list = set(demand.index) & set(re.index) & set(capacity_forecast.index) & set(capacity_actual.index) & set(prices.index)
         # defining different points in time of the environment
         self.time_list_hours = pd.Series(list(self.states_list)).sort_values()
-        self.time_list_days = pd.Series(filter(lambda d: (d.hour == 10), self.time_list_hours))
+        self.time_list_days = pd.Series(filter(lambda d: (d.hour == 0), self.time_list_hours))
 
         # define variables of environment from input data
         self.demand = demand
