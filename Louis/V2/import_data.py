@@ -15,7 +15,7 @@ country_code = 'DE_LU'  # Germany-Luxembourg
 client = EntsoePandasClient(api_key=your_key)
 
 # set directory and define the file paths
-parent_directory = os.path.join('..', 'data', 'preprocessed')
+parent_directory = os.path.join('../..', 'data', 'preprocessed')
 df_demand_path = os.path.join(parent_directory, 'df_demand.pkl')
 df_demand_scaled_path = os.path.join(parent_directory, 'df_demand_scaled.pkl')
 df_vre_path = os.path.join(parent_directory, 'df_vre.pkl')
@@ -99,6 +99,42 @@ def get_vre(start, end):
     df_re_prog_scaled.index = df_re_prog.index
 
     return df_re_prog, df_re_prog_scaled
+
+
+def get_vre_actuals(start, end):
+    """
+    Actuals Generation for Wind and Solar
+
+    Quelle
+    https://transparency.entsoe.eu/generation/r2/actualGenerationPerProductionType/show?name=&defaultValue=false&viewType=TABLE&areaType=CTA&atch=false&datepicker-day-offset-select-dv-date-from_input=D&dateTime.dateTime=14.03.2023+00:00|CET|DAYTIMERANGE&dateTime.endDateTime=14.03.2023+00:00|CET|DAYTIMERANGE&area.values=CTY|10Y1001A1001A83F!CTA|10YDE-VE-------2&productionType.values=B01&productionType.values=B02&productionType.values=B03&productionType.values=B04&productionType.values=B05&productionType.values=B06&productionType.values=B07&productionType.values=B08&productionType.values=B09&productionType.values=B10&productionType.values=B11&productionType.values=B12&productionType.values=B13&productionType.values=B14&productionType.values=B20&productionType.values=B15&productionType.values=B16&productionType.values=B17&productionType.values=B18&productionType.values=B19&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2)
+
+    Do some data manipulation from export from ENTSO-E, so get ready for the observation space
+    TODO Check the validity of ENTSO-E data, like are the renewable generation values always below the installed capacity, is the data complete etc.
+
+    Returns:
+    Renewable Infeed array for specified start and end date
+    """
+
+    # make api call
+    df_re_prog = pd.DataFrame(client.query_generation(country_code, start=start, end=end, psr_type=None))
+    print(df_re_prog)
+
+    # rename columns
+    # df_re_prog.columns = ['Forecasted Solar [MWh]', 'Forecasted Wind Offshore [MWh]', 'Forecasted Wind Onshore [MWh]']
+
+    # 15 min candles? -> aggregate hourly
+    df_re_prog = aggregate_hourly(df_re_prog)
+
+    # drop days with incomplete number of observations (!=24) per day. -> leap years
+    df_re_prog = drop_incomplete_datapoints(df_re_prog)
+
+    # scale data
+    df_re_prog = df_re_prog['Solar']
+
+    # set index
+    df_re_prog.index = df_re_prog.index
+
+    return df_re_prog
 
 
 def get_gen(start, end):

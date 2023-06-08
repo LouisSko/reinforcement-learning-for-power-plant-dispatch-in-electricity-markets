@@ -1,6 +1,6 @@
 # This is the programmed Environment in which the power plant acts
 import gym
-from gym.spaces import Box, Discrete
+from gym.spaces import Box, Discrete, Tuple
 import numpy as np
 import random
 import pandas as pd
@@ -55,22 +55,27 @@ class market_env(gym.Env):
         self.results_ep = pd.DataFrame(columns=["reward", "market price", "bid price", "bid volume"])
 
         # define possible OBSERVATIONS:
-        # each hour of a day is one state with one observation, which holds the forecast for that entire day
-        # day-ahead load forecast (observation[0]) and renewable forecast for wind onshore (observation[1]), offshore (observation[2]) and solar (observation[3])
-        # as well as the marginal costs observation[4], which are just fix at this point
-        # Note: if no renewable plant is dispatched this information could be reduced by using the residual load
+        # Observation[0]: Day-ahead load forecast
+        # Observation[1]: Renewable forecast for wind onshore
+        # Observation[2]: Renewable forecast for wind offshore
+        # Observation[3]: Renewable forecast for solar
+        # Observation[4]: Marginal costs
 
-        self.observation_space = Box(low=np.array([0, 0, 0, 0, 0]), high=np.array([1, 1, 1, 1, 30]),
-                                     shape=(5,))
+        # expanded shape to incorporate expected forecast
+        self.observation_space = Box(low=np.array([0, 0, 0, 0, 0, 0]), high=np.array([1, 1, 1, 1, 30, 1]),
+                                     shape=(6,))
 
         # define possible ACTIONS:
         # in the market the agent is currently only able to set the  price (action) at which it bids and the volume is fixed
         # these are defined relatively to the marginal costs 
 
-        # TODO bigger action space, also choose volume
-        # TODO ideal would be the submission of a bidding curve as in reality
+        # TODO: bigger action space, also choose volume
+        # TODO: ideal would be the submission of a bidding curve as in reality
 
-        self.action_space = Discrete(50, 0)
+        self.action_space = Tuple((
+            Discrete(50),  # Price action space (0 to 49)
+            Discrete(10)  # Volume action space (0 to 9)
+        ))
 
     # function that sampels days from the data
     def observe_state(self, date):
@@ -115,10 +120,11 @@ class market_env(gym.Env):
 
         # scale the reward
         # reward = (profit / self.reward_scaling)
+        # handling rewards close to zero can be problematic.-> add a constant of 1
         if profit > 0:
-            reward = np.log(profit)
+            reward = np.log(profit + 1)
         elif profit < 0:
-            reward = -np.log(-profit)
+            reward = -np.log(-profit - 1)
         else:
             reward = 0
 
