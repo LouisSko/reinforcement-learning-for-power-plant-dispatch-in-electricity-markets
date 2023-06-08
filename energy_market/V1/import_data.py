@@ -15,7 +15,7 @@ country_code = 'DE_LU'  # Germany-Luxembourg
 client = EntsoePandasClient(api_key=your_key)
 
 # set directory and define the file paths
-parent_directory = os.path.join('..', 'data', 'preprocessed')
+parent_directory = os.path.join('../..', 'data', 'preprocessed')
 df_demand_path = os.path.join(parent_directory, 'df_demand.pkl')
 df_demand_scaled_path = os.path.join(parent_directory, 'df_demand_scaled.pkl')
 df_vre_path = os.path.join(parent_directory, 'df_vre.pkl')
