@@ -39,7 +39,8 @@ TRAIN = False
 if TRAIN:
     # init Tensorboard
     tb = SummaryWriter()
-checkpoint_path = './models/model_risk.pth'
+
+checkpoint_path = os.path.join('../.', 'models/model_risk.pth') 
 
 
 if __name__ == '__main__':

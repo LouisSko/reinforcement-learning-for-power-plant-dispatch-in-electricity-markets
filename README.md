@@ -7,3 +7,7 @@ Then go to src/main.py
 - To train set TRAIN=True
 
 Run python main.py
+
+
+Here are the current results from tensorboard:
+
