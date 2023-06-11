@@ -1,4 +1,4 @@
-# bda-analytics-challenge-template  
+# BDA-Challenge
 
 To run the code you need to install the requirements first.
 
