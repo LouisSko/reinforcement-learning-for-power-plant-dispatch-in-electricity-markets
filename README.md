@@ -13,11 +13,11 @@ Here are the current results from tensorboard:
 
 
 # Average Reward
-![image.png](./image.png)
+![image.png](./images/image.png)
 
 # Average Bid Price with marginal costs of 30
-![image-1.png](./image-1.png)
+![image-1.png](./images/image-1.png)
 
 # Bid Volume and Current Capacity
-![image-2.png](./image-2.png)
+![image-2.png](./images/image-2.png)
 
