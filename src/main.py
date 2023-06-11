@@ -32,13 +32,13 @@ else:
 device = torch.device('cpu')
 
 # create if folder for tensorboard logs if not created yet
-if not os.path.exists('runs'):
-    os.makedirs('runs')
+if not os.path.exists('../runs'):
+    os.makedirs('../runs')
 
 TRAIN = False
 if TRAIN:
     # init Tensorboard
-    tb = SummaryWriter()
+    tb = SummaryWriter(log_dir='../runs')
 
 checkpoint_path = os.path.join('../.', 'models/model_risk.pth') 
 

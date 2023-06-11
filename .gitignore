@@ -86,5 +86,9 @@ target/
 .mypy_cache/
 
 # Models
-models/*
-!models/dummy_file_please_delete.txt
+#models/*
+
+
+
+# Tensorboard
+runs/*
