@@ -110,8 +110,6 @@ class market_env(gym.Env):
             The current observation and reward, as well as whether the state is terminal or not.
         """
 
-        # define current state as seen forecasts
-        self.observation = self.observe_state(self.date)
 
         # get bids from action
         action_price = action[0].item()
@@ -168,7 +166,8 @@ class market_env(gym.Env):
             self.iter = self.iter + 1
             self.date = self.date + pd.Timedelta(hours=1)
 
-        # have little place holder for info as gym requires it
+        # get next observation
+        self.observation = self.observe_state(self.date)
 
         info = {}
 
