@@ -100,12 +100,16 @@ if __name__ == '__main__':
             if torch.isnan(state).any():
                 state = torch.nan_to_num(state)
             
+
             # select action with policy
             price_action, volume_action,  price_action_logprob, volume_action_logprob, state_val = ppo_agent.select_action(state)
-            
+
             # perform a step in the market environment
             next_state, reward, done, _, info, avg_bid_price, bid_volume_list, capacity_current_list = env.step([price_action, volume_action], TRAIN)
 
+            
+            if time_step == 2:
+                sys.exit()
             if TRAIN:
                 # send the transition to the buffer
                 ppo_agent.send_memory_to_buffer(state, price_action, volume_action, price_action_logprob, volume_action_logprob, state_val, reward, done)
@@ -128,7 +132,7 @@ if __name__ == '__main__':
                     tb.add_scalar('Bid Price', np.mean(avg_bid_price[-1000:]), i_episode)
 
         if TRAIN and i_episode == 195000:
-            print("saving model at ... ")
+            print("saving model ... ")
             ppo_agent.save(checkpoint_path)
             print("model saved")
 

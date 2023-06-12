@@ -144,13 +144,16 @@ class market_env(gym.Env):
             The current observation and reward, as well as whether the state is terminal or not.
         """
 
-        # define current state as seen forecasts
-        self.observation = self.observe_state(self.date)
+        # should be at the end of step
+        # self.observation = self.observe_state(self.date)
 
-    
+
         # get bids from action
         action_price = action[0].item()
         action_volume = action[1].item()
+
+        print('Aktion für den Zeitpunkt {date}'.format(date=self.date))
+        print('Evaluation für den Zeitpunkt {date}'.format(date=self.date))
 
         # the bid price is relative to the marginal costs
         bid_price = (action_price / 5 * self.mc)
@@ -197,10 +200,14 @@ class market_env(gym.Env):
             self.iter = self.iter + 1
             self.date = self.date + pd.Timedelta(hours=1)
 
+        # now update the state
+        next_state = self.observe_state(self.date)
+        print('State Update für den Zeitpunkt {date}'.format(date=self.date))
+
         # have little place holder for info and truncated as gym requires it
         info = {}
         truncated = False
-        return self.observation, round(reward, 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list
+        return next_state, round(reward, 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list
     
     def market_clearing(self, bid_price, bid_volume, actual_price, capacity_current, date):
         """
