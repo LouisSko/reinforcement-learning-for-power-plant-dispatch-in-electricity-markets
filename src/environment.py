@@ -125,12 +125,7 @@ class market_env(gym.Env):
         return concat
     
 
-    def rescale(self, profit, lower_bound, upper_bound):
-            if profit > upper_bound:
-                profit = upper_bound
-            elif profit < lower_bound:
-                profit = lower_bound
-            
+    def rescale(self, profit, lower_bound, upper_bound):    
             reward = (profit - lower_bound) / (upper_bound - lower_bound) * 2 - 1
             return reward
 
@@ -152,14 +147,15 @@ class market_env(gym.Env):
         action_price = action[0].item()
         action_volume = action[1].item()
 
-        print('Aktion für den Zeitpunkt {date}'.format(date=self.date))
-        print('Evaluation für den Zeitpunkt {date}'.format(date=self.date))
 
         # the bid price is relative to the marginal costs
         bid_price = (action_price / 5 * self.mc)
 
-        # times 2 to increase the possible bid volume range
-        bid_volume = action_volume  * 2
+        # times 2 to increase the possible bid volume range, at the same time we want that the agent can set a 1 
+        if action_volume == 1:
+            bid_volume = 1
+        else:
+            bid_volume = action_volume  * 2
 
         # current capacity of pv 
         self.capacity_current = self.capacity_actual.loc[self.date].values[0]*self.capacity
@@ -180,10 +176,10 @@ class market_env(gym.Env):
             self.avg_bid_price.append(bid_price)
         
         # calculate the profit / reward
-        reward = self.market_clearing(bid_price, bid_volume, actual_price, self.capacity_current, self.date)
+        reward = self.market_clearing(bid_price, bid_volume, actual_price)
 
 
-        #print('bid price: ', bid_price, ' actual price: ', actual_price, 'bid volume: ' , bid_volume, ' current: ' , int(self.capacity_current))
+        print('bid price: ', bid_price, ' actual price: ', actual_price, 'bid volume: ' , bid_volume, ' current: ' , int(self.capacity_current), 'reward: ', reward, 'date: ' , self.date)
         
         self.bid_volume = bid_volume
         self.bid_price = bid_price
@@ -202,14 +198,13 @@ class market_env(gym.Env):
 
         # now update the state
         next_state = self.observe_state(self.date)
-        print('State Update für den Zeitpunkt {date}'.format(date=self.date))
 
         # have little place holder for info and truncated as gym requires it
         info = {}
         truncated = False
         return next_state, round(reward, 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list
     
-    def market_clearing(self, bid_price, bid_volume, actual_price, capacity_current, date):
+    def market_clearing(self, bid_price, bid_volume, actual_price):
         """
             A function that calculates the output the day-ahead market would give when the selcted bid is submitted [EUR]
 
@@ -218,16 +213,16 @@ class market_env(gym.Env):
 
         if bid_price <= actual_price:
             # bid is sucessful
-            profit = bid_volume * (actual_price - self.mc)
+            reward = bid_volume * (actual_price - self.mc)
             
-            if bid_volume > self.capacity_current:
+            if bid_volume > int(self.capacity_current):
                 # agent has to buy at the market for a higher price
-                avg_price = actual_price*1.1
-                remaining = bid_volume - self.capacity_current
-                profit = profit - (remaining * (avg_price + self.mc))
-                reward = self.rescale(profit, self.lower_bound, self.upper_bound)
-            else:
-                reward = self.rescale(profit, self.lower_bound, self.upper_bound)
+                avg_price = actual_price*1.3
+                remaining = bid_volume - int(self.capacity_current)
+                #print(remaining)
+                reward = reward - (remaining * (avg_price + self.mc))
+
+            reward = self.rescale(reward, self.lower_bound, self.upper_bound)
         else:
             # bid is not sucessfull
             reward = 0
@@ -260,17 +255,17 @@ class market_env(gym.Env):
             i = random.randrange(len(self.time_list_days) - 1)
             self.date = self.time_list_days.iloc[i]
 
-            # Extract the month and year from the date to leave some data for testing
+            # Extract the month and year from the date to leave some data for testing -> we should do a train, test split
             month = self.date.strftime('%m')
             year = self.date.strftime('%Y')
 
-            if month == '09' and year == '2020':
-                self.get_random_new_date()
+            if month == '09' and year == '2021':
+                self.get_random_new_date(TRAIN)
                 
         else:
             # testing
             day = random.randrange(1,28)
-            self.date = pd.Timestamp('2020-09-{day} 00:00:00+02:00'.format(day=str(day)))
+            self.date = pd.Timestamp('2021-07-{day} 00:00:00+02:00'.format(day=str(day)))
         return self.date
 
     

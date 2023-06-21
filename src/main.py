@@ -32,15 +32,16 @@ else:
 device = torch.device('cpu')
 
 # create if folder for tensorboard logs if not created yet
-if not os.path.exists('../runs'):
-    os.makedirs('../runs')
+if not os.path.exists('runs'):
+    os.makedirs('runs')
 
 TRAIN = False
 if TRAIN:
     # init Tensorboard
-    tb = SummaryWriter(log_dir='../runs')
-
-checkpoint_path = os.path.join('../.', 'models/model_risk.pth') 
+    tb = SummaryWriter()
+    checkpoint_path = os.path.join('../.', 'models') 
+else:
+    saved_model = os.path.join('../.', 'models/model_195000_episodes.pth') 
 
 
 if __name__ == '__main__':
@@ -55,9 +56,10 @@ if __name__ == '__main__':
 
     # initialize the market/gym environment
     env = market_env(demand=df_demand_scaled, re=df_vre_scaled, capacity_forecast= df_solar_cap_forecast, 
-                     capacity_actual=df_solar_cap_actual, prices=df_mcp, eps_length=11, capacity=200, mc=30,
+                     capacity_actual=df_solar_cap_actual, prices=df_mcp, eps_length=24, capacity=200, mc=50,
                      lower_bound=lower_bound, upper_bound=upper_bound)
-
+    
+    
     n_episodes = 200000   # break training loop if i_episodes > n_episodes
 
     # hyperparameters 
@@ -76,11 +78,13 @@ if __name__ == '__main__':
     price_action_dim = env.action_space[0].n
     volume_action_dim = env.action_space[1].n
 
+    
+
     # initialize the PPO agent
     ppo_agent = PPOAgent(state_dim, price_action_dim, volume_action_dim, lr_actor, lr_critic, gamma, n_epochs, eps_clip, device)
 
     if not TRAIN:
-        ppo_agent.load(checkpoint_path)
+        ppo_agent.load(saved_model)
 
     time_step = 0
     i_episode = 0
@@ -107,9 +111,6 @@ if __name__ == '__main__':
             # perform a step in the market environment
             next_state, reward, done, _, info, avg_bid_price, bid_volume_list, capacity_current_list = env.step([price_action, volume_action], TRAIN)
 
-            
-            if time_step == 2:
-                sys.exit()
             if TRAIN:
                 # send the transition to the buffer
                 ppo_agent.send_memory_to_buffer(state, price_action, volume_action, price_action_logprob, volume_action_logprob, state_val, reward, done)
@@ -117,23 +118,28 @@ if __name__ == '__main__':
             state = next_state
             current_ep_reward += reward
 
+            
+
             if TRAIN:
                 tb.add_scalars('Bid Capacity', {'bid' : np.mean(bid_volume_list[-1]), 'cap' : np.mean(capacity_current_list[-1])}, global_step=time_step)
 
             time_step +=1
-
             # update PPO agent
             if time_step % update_timestep == 0:
-                print('Average Reward: ', np.mean(avg_rewards[-1000:]))
-                
                 if TRAIN:
                     ppo_agent.update()
                     tb.add_scalar('Average Reward', np.mean(avg_rewards[-1000:]), i_episode)
                     tb.add_scalar('Bid Price', np.mean(avg_bid_price[-1000:]), i_episode)
+                else:
+                    print('Average Reward: ', np.mean(avg_rewards[-1000:]))
+                    df = pd.DataFrame(avg_bid_price)
+                    print(df.value_counts())
+                    sys.exit()
 
-        if TRAIN and i_episode == 195000:
+        if TRAIN and (i_episode == 195000 or i_episode == 100000 or i_episode == 50000):
             print("saving model ... ")
-            ppo_agent.save(checkpoint_path)
+            save_path = os.path.join(checkpoint_path, 'model_{episode}_episodes.pth'.format(episode=i_episode))
+            ppo_agent.save(save_path)
             print("model saved")
 
         i_episode += 1
@@ -141,6 +147,8 @@ if __name__ == '__main__':
 
     env.close()
     tb.close()
+
+    
 
 
    
