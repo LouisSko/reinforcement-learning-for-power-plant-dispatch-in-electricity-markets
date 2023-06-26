@@ -24,12 +24,11 @@ class ActorCriticAgent:
         _, probs_prc, probs_vol = self.model(state)
         action_prc_dist = torch.distributions.Categorical(probs=probs_prc)
         action_vol_dist = torch.distributions.Categorical(probs=probs_vol)
-        action_prc = action_prc_dist.sample()
-        action_vol = action_vol_dist.sample()
+        action_prc = action_prc_dist.sample().unsqueeze(0)
+        action_vol = action_vol_dist.sample().unsqueeze(0)
+        self.action = torch.cat([action_prc, action_vol])
 
-        #self.action = torch.cat([action_prc, action_vol])
-
-        return action_prc, action_vol
+        return self.action
 
     def save_models(self):
         print('... saving models ...')

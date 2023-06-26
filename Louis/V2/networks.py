@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class ActorCritic(nn.Module):
-    def __init__(self, input_size, n_actions_prc, n_actions_vol, n_neurons1=256, n_neurons2=128, name='actor_critic',
+    def __init__(self, input_size, n_actions_prc, n_actions_vol, n_neurons1=512, n_neurons2=256, n_neurons3=128, name='actor_critic',
                  chkpt_dir=os.path.join(os.getcwd(), '../checkpoints')):
         if not os.path.exists(chkpt_dir):
             os.makedirs(chkpt_dir)
@@ -19,9 +19,10 @@ class ActorCritic(nn.Module):
 
         self.fc1 = nn.Linear(input_size, n_neurons1)
         self.fc2 = nn.Linear(n_neurons1, n_neurons2)
-        self.fc_critic = nn.Linear(n_neurons2, 1)
-        self.fc_actor_prc = nn.Linear(n_neurons2, self.n_actions_prc)  # outputs n_actions for price
-        self.fc_actor_vol = nn.Linear(n_neurons2, self.n_actions_vol)  # outputs n_actions for volume
+        self.fc3 = nn.Linear(n_neurons2, n_neurons3)
+        self.fc_critic = nn.Linear(n_neurons3, 1)
+        self.fc_actor_prc = nn.Linear(n_neurons3, self.n_actions_prc)  # outputs n_actions for price
+        self.fc_actor_vol = nn.Linear(n_neurons3, self.n_actions_vol)  # outputs n_actions for volume
 
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=-1)
@@ -29,6 +30,7 @@ class ActorCritic(nn.Module):
     def forward(self, state):
         value = self.relu(self.fc1(state))
         value = self.relu(self.fc2(value))
+        value = self.relu(self.fc3(value))
 
         v = self.fc_critic(value)
         pi_prc = self.fc_actor_prc(value)

@@ -160,6 +160,9 @@ def get_solar_estimate(start, end):
     # 15 min candles? -> aggregate hourly
     solar_estimate = aggregate_hourly(solar_estimate)
 
+    # drop nas
+    solar_estimate = solar_estimate.dropna()
+
     # drop days with incomplete number of observations (!=24) per day. -> leap years
     solar_estimate = drop_incomplete_datapoints(solar_estimate)
 

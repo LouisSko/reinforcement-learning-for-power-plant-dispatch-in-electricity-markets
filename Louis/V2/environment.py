@@ -30,6 +30,7 @@ class market_env(gym.Env):
         self.capacity_forecast = capacity_forecast
         self.capacity_actual = capacity_actual
         self.prices = prices
+        self.capacity_current = None
 
         # get data technical data for the agent
         self.capacity = capacity
@@ -48,7 +49,7 @@ class market_env(gym.Env):
         self.profit = 0
         self.is_terminal = False
         # Initialize results data frame
-        self.results_ep = pd.DataFrame(columns=["reward", "market price", "bid price", "bid volume"])
+        self.results_ep = pd.DataFrame(columns=["reward",  "profit", "net_profit", "delta", "market price", "bid price", "bid volume", "actual volume"])
 
         # define possible OBSERVATIONS:
         # Observation[0]: Day-ahead load forecast
@@ -70,8 +71,10 @@ class market_env(gym.Env):
 
         self.action_space = Tuple((
             Discrete(50),  # Price action space (0 to 49)
-            Discrete(10)  # Volume action space (0 to 9)
+            Discrete(50)  # Volume action space (0 to 9)
         ))
+
+
 
     # function that sampels days from the data
     def observe_state(self, date):
@@ -111,31 +114,49 @@ class market_env(gym.Env):
         self.observation = self.observe_state(self.date)
 
         # get bids from action
-        action_price = action[0]
-        action_volume = action[1]
+        action_price = action[0].item()
+        action_volume = action[1].item()
 
         # the bid price is relative to the marginal costs
-        bid_price = action_price / 10 * self.mc
 
-        bid_volume = action_volume * 20
+        bid_price = (action_price / 10 * self.mc)
+        bid_price = self.mc
+        #bid_volume = (action_volume * self.capacity)/(self.len_as_vol-1)
+        bid_volume = np.linspace(0, 50, 50)[action_volume]
+
 
         # TODO: implement bid_volume restriction
-
-
-
         profit, da_price = self.market_clearing(bid_price, bid_volume, self.date)
 
+        avg_price = da_price*1.2
+
+        self.capacity_current = self.capacity_actual.loc[self.date].values[0]*self.capacity
+
         # define the reward
-        # handling rewards close to zero can be problematic.-> add a constant of 1
-        if profit > 0:
-            reward = np.log(profit + 1)
-        elif profit < 0:
-            reward = -np.log(-profit - 1)
+        delta = avg_price * (self.capacity_current-bid_volume)
+
+        if delta > 0:
+            net_profit = profit
+        else:
+            net_profit = profit + delta
+
+        if net_profit > 0:
+            reward = np.log(net_profit + 1).item()
+        elif net_profit < 0:
+            reward = -np.log(-net_profit + 1).item()
         else:
             reward = 0
 
+        self.delta = delta
+        self.profit = profit
+        self.net_profit = net_profit
+        self.bid_volume = bid_volume
+        self.bid_price = bid_price
+        self.da_price = da_price
+        self.reward = reward
+
         # write results
-        self.results_ep.loc[self.date] = [round(reward, 4), da_price, bid_price, bid_volume]
+        self.results_ep.loc[self.date] = [reward, profit, net_profit, delta, da_price, bid_price, bid_volume, self.capacity_current]
 
         # check if terminal state and define the next day that is used
         if self.iter == self.eps_length - 1:
