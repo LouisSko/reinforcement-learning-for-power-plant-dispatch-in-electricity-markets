@@ -35,13 +35,13 @@ device = torch.device('cpu')
 if not os.path.exists('runs'):
     os.makedirs('runs')
 
-TRAIN = False
+TRAIN = True
 if TRAIN:
     # init Tensorboard
     tb = SummaryWriter()
-    checkpoint_path = os.path.join('../.', 'models') 
+    checkpoint_path = os.path.join('../.', 'models')
 else:
-    saved_model = os.path.join('../.', 'models/model_195000_episodes.pth') 
+    saved_model = os.path.join('../.', 'models/model_50000_episodes.pth')
 
 
 if __name__ == '__main__':
@@ -55,12 +55,12 @@ if __name__ == '__main__':
     upper_bound = 10000
 
     # initialize the market/gym environment
-    env = market_env(demand=df_demand_scaled, re=df_vre_scaled, capacity_forecast= df_solar_cap_forecast, 
+    env = market_env(demand=df_demand_scaled, re=df_vre_scaled, capacity_forecast=df_solar_cap_forecast,
                      capacity_actual=df_solar_cap_actual, prices=df_mcp, eps_length=24, capacity=200, mc=50,
                      lower_bound=lower_bound, upper_bound=upper_bound)
     
     
-    n_episodes = 200000   # break training loop if i_episodes > n_episodes
+    n_episodes = 50000   # break training loop if i_episodes > n_episodes
 
     # hyperparameters 
     # most hyperparameters are chosen based on the default of stable baselines 3
@@ -78,7 +78,6 @@ if __name__ == '__main__':
     price_action_dim = env.action_space[0].n
     volume_action_dim = env.action_space[1].n
 
-    
 
     # initialize the PPO agent
     ppo_agent = PPOAgent(state_dim, price_action_dim, volume_action_dim, lr_actor, lr_critic, gamma, n_epochs, eps_clip, device)
@@ -89,7 +88,7 @@ if __name__ == '__main__':
     time_step = 0
     i_episode = 0
     avg_rewards = []
-    
+
 
     # training / testing loop
     while i_episode <= n_episodes:
@@ -121,9 +120,9 @@ if __name__ == '__main__':
             
 
             if TRAIN:
-                tb.add_scalars('Bid Capacity', {'bid' : np.mean(bid_volume_list[-1]), 'cap' : np.mean(capacity_current_list[-1])}, global_step=time_step)
+                tb.add_scalars('Bid Capacity', {'bid': np.mean(bid_volume_list[-1]), 'cap': np.mean(capacity_current_list[-1])}, global_step=time_step)
 
-            time_step +=1
+            time_step += 1
             # update PPO agent
             if time_step % update_timestep == 0:
                 if TRAIN:
@@ -131,14 +130,15 @@ if __name__ == '__main__':
                     tb.add_scalar('Average Reward', np.mean(avg_rewards[-1000:]), i_episode)
                     tb.add_scalar('Bid Price', np.mean(avg_bid_price[-1000:]), i_episode)
                 else:
-                    print('Average Reward: ', np.mean(avg_rewards[-1000:]))
                     df = pd.DataFrame(avg_bid_price)
                     print(df.value_counts())
                     sys.exit()
 
+                print('Average Reward', np.mean(avg_rewards[-1000:]))
+
         if TRAIN and (i_episode == 195000 or i_episode == 100000 or i_episode == 50000):
             print("saving model ... ")
-            save_path = os.path.join(checkpoint_path, 'model_{episode}_episodes.pth'.format(episode=i_episode))
+            save_path = os.path.join(checkpoint_path, 'model_{episode}_episodes_new.pth'.format(episode=i_episode))
             ppo_agent.save(save_path)
             print("model saved")
 
@@ -147,13 +147,3 @@ if __name__ == '__main__':
 
     env.close()
     tb.close()
-
-    
-
-
-   
-
-
-
-
-    
