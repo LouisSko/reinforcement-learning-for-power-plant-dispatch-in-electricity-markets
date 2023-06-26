@@ -9,7 +9,8 @@ import pandas as pd
 # define the market environment
 class market_env(gym.Env):
 
-    def __init__(self, demand, re, capacity_forecast, capacity_actual, prices, eps_length=24, capacity=200, mc=30, lower_bound=-10000, upper_bound=10000):
+    def __init__(self, demand, re, capacity_forecast, capacity_actual, prices, eps_length=24, capacity=200, mc=30,
+                 lower_bound=-10000, upper_bound=10000):
         """
 
         """
@@ -17,7 +18,8 @@ class market_env(gym.Env):
         super().__init__()
 
         # get rows where all data is available
-        self.states_list = set(demand.index) & set(re.index) & set(capacity_forecast.index) & set(capacity_actual.index) & set(prices.index)
+        self.states_list = set(demand.index) & set(re.index) & set(capacity_forecast.index) & set(
+            capacity_actual.index) & set(prices.index)
         # defining different points in time of the environment
         self.time_list_hours = pd.Series(list(self.states_list)).sort_values()
         self.time_list_days = pd.Series(filter(lambda d: (d.hour == 0), self.time_list_hours))
@@ -56,7 +58,9 @@ class market_env(gym.Env):
         self.profit = 0
         self.is_terminal = False
         # Initialize results data frame
-        self.results_ep = pd.DataFrame(columns=["reward",  "profit", "net_profit", "delta", "market price", "bid price", "bid volume", "actual volume"])
+        self.results_ep = pd.DataFrame(
+            columns=["reward", "profit", "net_profit", "delta", "market price", "bid price", "bid volume",
+                     "actual volume"])
 
         # define possible OBSERVATIONS:
         # Observation[0]: Day-ahead load forecast
@@ -67,7 +71,7 @@ class market_env(gym.Env):
 
         # expanded shape to incorporate expected forecast
         high = np.ones(15)
-        last_element = np.array([self.mc/10])
+        last_element = np.array([self.mc / 10])
         high = np.concatenate((high, last_element))
         self.observation_space = Box(low=np.zeros(16), high=high,
                                      shape=(16,))
@@ -83,8 +87,6 @@ class market_env(gym.Env):
             Discrete(11),  # Price action space (0 to 49)
             Discrete(11)  # Volume action space (0 to 9)
         ))
-
-
 
     # function that sampels days from the data
     def observe_state(self, date):
@@ -105,29 +107,34 @@ class market_env(gym.Env):
 
         # get necessary features x 3 
         self._demand = self.demand.loc[(self.demand.index >= date - time_range) & (self.demand.index <= date)]
-        self._sun = self.re_gen['Forecasted Solar [MWh]'].loc[(self.re_gen['Forecasted Solar [MWh]'].index >= date - time_range) & (self.re_gen['Forecasted Solar [MWh]'].index <= date)]
-        self._wind_off = self.re_gen['Forecasted Wind Offshore [MWh]'].loc[(self.re_gen['Forecasted Wind Offshore [MWh]'].index >= date - time_range) & (self.re_gen['Forecasted Wind Offshore [MWh]'].index <= date)]
-        self._wind_on = self.re_gen['Forecasted Wind Onshore [MWh]'].loc[(self.re_gen['Forecasted Wind Onshore [MWh]'].index >= date - time_range) & (self.re_gen['Forecasted Wind Onshore [MWh]'].index <= date)]
-        self._capacity = self.capacity_forecast.loc[(self.capacity_forecast.index >= date - time_range) & (self.capacity_forecast.index <= date)]
-        
-        
+        self._sun = self.re_gen['Forecasted Solar [MWh]'].loc[
+            (self.re_gen['Forecasted Solar [MWh]'].index >= date - time_range) & (
+                        self.re_gen['Forecasted Solar [MWh]'].index <= date)]
+        self._wind_off = self.re_gen['Forecasted Wind Offshore [MWh]'].loc[
+            (self.re_gen['Forecasted Wind Offshore [MWh]'].index >= date - time_range) & (
+                        self.re_gen['Forecasted Wind Offshore [MWh]'].index <= date)]
+        self._wind_on = self.re_gen['Forecasted Wind Onshore [MWh]'].loc[
+            (self.re_gen['Forecasted Wind Onshore [MWh]'].index >= date - time_range) & (
+                        self.re_gen['Forecasted Wind Onshore [MWh]'].index <= date)]
+        self._capacity = self.capacity_forecast.loc[
+            (self.capacity_forecast.index >= date - time_range) & (self.capacity_forecast.index <= date)]
+
         concat = np.concatenate((self._demand,
-                               self._sun,
-                               self._wind_off,
-                               self._wind_on,
-                               self._capacity,
-                               self.mc/10), axis=None)
-        
+                                 self._sun,
+                                 self._wind_off,
+                                 self._wind_on,
+                                 self._capacity,
+                                 self.mc / 10), axis=None)
+
         # if the last time steps do not exist (e.g. end of the beginning of the day -> add zeros)
         if concat.size <= self.observation_space.shape[0]:
             concat = np.pad(concat, (16 - concat.size, 0), 'constant', constant_values=0)
-       
-        return concat
-    
 
-    def rescale(self, profit, lower_bound, upper_bound):    
-            reward = (profit - lower_bound) / (upper_bound - lower_bound) * 2 - 1
-            return reward
+        return concat
+
+    def rescale(self, profit, lower_bound, upper_bound):
+        reward = (profit - lower_bound) / (upper_bound - lower_bound) * 2 - 1
+        return reward
 
     def step(self, action, TRAIN):
 
@@ -142,11 +149,9 @@ class market_env(gym.Env):
         # should be at the end of step
         # self.observation = self.observe_state(self.date)
 
-
         # get bids from action
         action_price = action[0].item()
         action_volume = action[1].item()
-
 
         # the bid price is relative to the marginal costs
         bid_price = (action_price / 5 * self.mc)
@@ -155,10 +160,10 @@ class market_env(gym.Env):
         if action_volume == 1:
             bid_volume = 1
         else:
-            bid_volume = action_volume  * 2
+            bid_volume = action_volume * 2
 
         # current capacity of pv 
-        self.capacity_current = self.capacity_actual.loc[self.date].values[0]*self.capacity
+        self.capacity_current = self.capacity_actual.loc[self.date].values[0] * self.capacity
 
         # market price
         actual_price = self.prices.loc[self.date].values[0]
@@ -174,13 +179,13 @@ class market_env(gym.Env):
         # we only track the average bid price when the bid price can have an impact on the profit
         if self.capacity_current > 0:
             self.avg_bid_price.append(bid_price)
-        
+
         # calculate the profit / reward
         reward = self.market_clearing(bid_price, bid_volume, actual_price)
 
+        # print('bid price: ', bid_price, ' actual price: ', actual_price, 'bid volume: ', bid_volume, ' current: ',
+        #      int(self.capacity_current), 'reward: ', reward, 'date: ', self.date)
 
-        print('bid price: ', bid_price, ' actual price: ', actual_price, 'bid volume: ' , bid_volume, ' current: ' , int(self.capacity_current), 'reward: ', reward, 'date: ' , self.date)
-        
         self.bid_volume = bid_volume
         self.bid_price = bid_price
         self.da_price = actual_price
@@ -202,25 +207,36 @@ class market_env(gym.Env):
         # have little place holder for info and truncated as gym requires it
         info = {}
         truncated = False
-        return next_state, round(reward, 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list
-    
+        return next_state, round(reward,
+                                 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list
+
     def market_clearing(self, bid_price, bid_volume, actual_price):
         """
             A function that calculates the output the day-ahead market would give when the selcted bid is submitted [EUR]
 
             Return: overall profit received from market in EUR and realised market price in EUR/MWh
         """
-
         if bid_price <= actual_price:
             # bid is sucessful
             reward = bid_volume * (actual_price - self.mc)
-            
+
             if bid_volume > int(self.capacity_current):
-                # agent has to buy at the market for a higher price
-                avg_price = actual_price*1.3
+                # agent has to buy at the market for a higher price. Simplified assumptions
+                if actual_price > 0:
+                    avg_price = actual_price * 1.3
+                if actual_price < 0:
+                    avg_price = actual_price * 0.7
+                if actual_price == 0:
+                    avg_price = 3
+
+                # calculate the excess volume
                 remaining = bid_volume - int(self.capacity_current)
-                #print(remaining)
-                reward = reward - (remaining * (avg_price + self.mc))
+
+                # update the reward
+                reward = reward - remaining * (actual_price - self.mc)  # substract the excess reward from the reward which should not be granted
+                reward = reward + remaining * (actual_price - avg_price)  # add the costs of buying additional energy. avg_price is essentially the new mc's
+
+                # its equivalent: reward = reward - remaining * (avg_price - self.mc)
 
             reward = self.rescale(reward, self.lower_bound, self.upper_bound)
         else:
@@ -228,6 +244,8 @@ class market_env(gym.Env):
             reward = 0
 
         return reward
+
+
 
     def reset(self, TRAIN):
         """
@@ -261,12 +279,9 @@ class market_env(gym.Env):
 
             if month == '09' and year == '2021':
                 self.get_random_new_date(TRAIN)
-                
+
         else:
             # testing
-            day = random.randrange(1,28)
+            day = random.randrange(1, 28)
             self.date = pd.Timestamp('2021-07-{day} 00:00:00+02:00'.format(day=str(day)))
         return self.date
-
-    
-
