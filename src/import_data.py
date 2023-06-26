@@ -138,11 +138,15 @@ def get_solar_actual(start, end):
     # drop days with incomplete number of observations (!=24) per day. -> leap years
     solar_actual = drop_incomplete_datapoints(solar_actual)
 
-    # Group the data by day and apply scaling to each day's values
-    solar_actual['solar_capacity_actual'] = solar_actual.groupby(solar_actual.index.date)[
-        'Actual Aggregated'].transform(lambda x: x / x.sum())
+    # scale data
+    scaler = MinMaxScaler((0, 1))
+    solar_actual_scaled = pd.DataFrame(scaler.fit_transform(solar_actual[['Actual Aggregated']]),
+                                       columns=['solar_capacity_actual'])
 
-    return solar_actual[['solar_capacity_actual']]
+    # set index
+    solar_actual_scaled.index = solar_actual.index
+
+    return solar_actual_scaled
 
 
 def get_solar_estimate(start, end):
@@ -176,11 +180,15 @@ def get_solar_estimate(start, end):
     # drop days with incomplete number of observations (!=24) per day. -> leap years
     solar_estimate = drop_incomplete_datapoints(solar_estimate)
 
-    # Group the data by day and apply scaling to each day's values
-    solar_estimate['solar_capacity_forecast'] = solar_estimate.groupby(solar_estimate.index.date)[
-        'Forecasted Solar [MWh]'].transform(lambda x: x / x.sum())
+    # scale data
+    scaler = MinMaxScaler((0, 1))
+    solar_estimate_scaled = pd.DataFrame(scaler.fit_transform(solar_estimate[['Forecasted Solar [MWh]']]),
+                                         columns=['solar_capacity_forecast'])
 
-    return solar_estimate[['solar_capacity_forecast']]
+    # set index
+    solar_estimate_scaled.index = solar_estimate.index
+
+    return solar_estimate_scaled
 
 
 def get_gen(start, end):
@@ -287,6 +295,7 @@ def get_data(start=None, end=None, store=True):
         df_solar_cap_forecast.to_pickle(df_solar_cap_forecast_path)
         print('saved data')
 
+
 def read_processed_files():
     # Read the pickle files and load as DataFrames
     df_demand = pd.read_pickle(df_demand_path)
@@ -304,4 +313,3 @@ def read_processed_files():
 
 if __name__ == '__main__':
     get_data()
-
