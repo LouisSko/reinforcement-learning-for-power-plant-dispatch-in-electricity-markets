@@ -124,7 +124,7 @@ class market_env(gym.Env):
                                  self._wind_off,
                                  self._wind_on,
                                  self._capacity,
-                                 self.mc / 10), axis=None)
+                                 self.mc / 10), axis=None)  # why division by 10?
 
         # if the last time steps do not exist (e.g. end of the beginning of the day -> add zeros)
         if concat.size <= self.observation_space.shape[0]:
@@ -154,13 +154,10 @@ class market_env(gym.Env):
         action_volume = action[1].item()
 
         # the bid price is relative to the marginal costs
-        bid_price = (action_price / 5 * self.mc)
+        bid_price = (action_price / 2 * self.mc)
 
-        # times 2 to increase the possible bid volume range, at the same time we want that the agent can set a 1 
-        if action_volume == 1:
-            bid_volume = 1
-        else:
-            bid_volume = action_volume * 2
+        # increase the possible bid volume range, at the same time we want that the agent can set a 1
+        bid_volume = action_volume * 20
 
         # current capacity of pv 
         self.capacity_current = self.capacity_actual.loc[self.date].values[0] * self.capacity
@@ -169,8 +166,8 @@ class market_env(gym.Env):
         actual_price = self.prices.loc[self.date].values[0]
 
         # for training and the reward function it's better to only allow positive prices
-        if actual_price < 0:
-            actual_price = 0
+        # if actual_price < 0:
+        #    actual_price = 0
 
         # list of bid volumes and current capacities to plot it in the tensorboard later
         self.bid_volume_list.append(bid_volume)
