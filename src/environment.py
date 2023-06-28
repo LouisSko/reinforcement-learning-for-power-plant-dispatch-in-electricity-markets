@@ -247,8 +247,8 @@ class market_env(gym.Env):
 
                 # its equivalent: reward = reward - remaining * (avg_price - self.mc)
 
-            #reward = self.rescale_linear(reward, self.lower_bound, self.upper_bound)
-            reward = self.rescale_log(reward,  self.lower_bound, self.upper_bound)
+            reward = self.rescale_linear(reward, self.lower_bound, self.upper_bound)
+            #reward = self.rescale_log(reward,  self.lower_bound, self.upper_bound)
 
         else:
             # bid is not successful
