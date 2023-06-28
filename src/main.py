@@ -64,9 +64,9 @@ if __name__ == '__main__':
 
     # hyperparameters 
     # most hyperparameters are chosen based on the default of stable baselines 3
-    update_timestep = 2048   # update policy every 2048 steps
+    update_timestep = 2048  # update policy every 2048 steps
     n_epochs = 10           # update policy for K epochs in one PPO update
-    eps_clip = 0.22          # clip parameter for PPO
+    eps_clip = 0.22         # clip parameter for PPO
     gamma = 0.99            # discount factor
 
     lr_actor = 0.0002       # learning rate for actor network
@@ -134,7 +134,7 @@ if __name__ == '__main__':
                     print(df.value_counts())
                     sys.exit()
 
-                print('Average Reward', np.mean(avg_rewards[-1000:]))
+                print(f'Episode {i_episode} out of {n_episodes}. Average Reward {np.mean(avg_rewards[-1000:])}')
 
         if TRAIN and (i_episode == 195000 or i_episode == 100000 or i_episode == 50000):
             print("saving model ... ")
