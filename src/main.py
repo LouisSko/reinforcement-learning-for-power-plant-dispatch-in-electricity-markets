@@ -108,7 +108,8 @@ if __name__ == '__main__':
             price_action, volume_action,  price_action_logprob, volume_action_logprob, state_val = ppo_agent.select_action(state)
 
             # perform a step in the market environment
-            next_state, reward, done, _, info, avg_bid_price, bid_volume_list, capacity_current_list, profit_list = env.step([price_action, volume_action], TRAIN)
+            next_state, reward, done, _, info = env.step([price_action, volume_action], TRAIN)
+
 
             if TRAIN:
                 # send the transition to the buffer
@@ -119,8 +120,7 @@ if __name__ == '__main__':
 
 
             if TRAIN:
-                tb.add_scalars('Bid Capacity', {'bid': bid_volume_list[-1], 'cap': capacity_current_list[-1]}, global_step=time_step)
-
+                tb.add_scalars('Bid Capacity', {'bid': env.bid_volume_list[-1], 'cap': env.capacity_current_list[-1]}, global_step=time_step)
 
             time_step += 1
             # update PPO agent
@@ -128,14 +128,14 @@ if __name__ == '__main__':
                 if TRAIN:
                     ppo_agent.update()
                     tb.add_scalar('Average Reward', np.mean(avg_rewards[-update_timestep:]), i_episode)
-                    tb.add_scalar('Average Bid Price', np.mean(avg_bid_price[-update_timestep:]), i_episode)
-                    tb.add_scalar('Average Profit', np.mean(profit_list[-update_timestep:]), i_episode)
+                    tb.add_scalar('Average Bid Price', np.mean(env.avg_bid_price[-update_timestep:]), i_episode)
+                    tb.add_scalar('Average Profit', np.mean(env.profit_list[-update_timestep:]), i_episode)
                 else:
-                    df = pd.DataFrame(avg_bid_price)
+                    df = pd.DataFrame(env.avg_bid_price)
                     print(df.value_counts())
                     sys.exit()
 
-                print(f'Episode {i_episode} out of {n_episodes}. Average Reward {np.mean(avg_rewards[-update_timestep:])}. Average Profit: {np.mean(profit_list[-update_timestep:])}')
+                print(f'Episode {i_episode} out of {n_episodes}. Average Reward {np.mean(avg_rewards[-update_timestep:])}. Average Profit: {np.mean(env.profit_list[-update_timestep:])}')
 
         if TRAIN and (i_episode == 195000 or i_episode == 100000 or i_episode == 50000):
             print("saving model ... ")

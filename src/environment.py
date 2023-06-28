@@ -220,8 +220,7 @@ class market_env(gym.Env):
         # have little place holder for info and truncated as gym requires it
         info = {}
         truncated = False
-        return next_state, round(reward, 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list, self.profit_list
-
+        return next_state, round(reward, 4), self.is_terminal, truncated, info
     def market_clearing(self, bid_price, bid_volume, actual_price):
         """
             A function that calculates the output the day-ahead market would give when the selcted bid is submitted [EUR]
