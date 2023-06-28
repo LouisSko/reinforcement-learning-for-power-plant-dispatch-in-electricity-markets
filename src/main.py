@@ -117,10 +117,10 @@ if __name__ == '__main__':
             state = next_state
             current_ep_reward += reward
 
-            
 
             if TRAIN:
-                tb.add_scalars('Bid Capacity', {'bid': np.mean(bid_volume_list[-1]), 'cap': np.mean(capacity_current_list[-1])}, global_step=time_step)
+                tb.add_scalars('Bid Capacity', {'bid': bid_volume_list[-1], 'cap': capacity_current_list[-1]}, global_step=time_step)
+
 
             time_step += 1
             # update PPO agent
