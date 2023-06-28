@@ -132,10 +132,19 @@ class market_env(gym.Env):
 
         return concat
 
-    def rescale(self, profit, lower_bound, upper_bound):
+    def rescale_linear(self, profit, lower_bound, upper_bound):
         reward = (profit - lower_bound) / (upper_bound - lower_bound) * 2 - 1
         return reward
 
+    def rescale_log(self, profit, lower_bound, upper_bound):
+        if profit > 0:
+            reward = np.log(profit + 1).item()
+        elif profit < 0:
+            reward = -np.log(-profit + 1).item()
+        else:
+            reward = 0
+
+        return reward
     def step(self, action, TRAIN):
 
         """
@@ -154,10 +163,14 @@ class market_env(gym.Env):
         action_volume = action[1].item()
 
         # the bid price is relative to the marginal costs
-        bid_price = (action_price / 2 * self.mc)
+        # bid_price = (action_price / 2 * self.mc)
 
-        # increase the possible bid volume range, at the same time we want that the agent can set a 1
-        bid_volume = action_volume * 20
+        # increase the possible bid volume range
+        # bid_volume = action_volume * 20
+
+        # set bid_price and bid_volume using an exponential function
+        bid_price = np.power(action_price, 2) * self.mc / 25
+        bid_volume = np.power(action_volume, 2) * self.capacity / 100
 
         # current capacity of pv 
         self.capacity_current = self.capacity_actual.loc[self.date].values[0] * self.capacity
@@ -204,8 +217,7 @@ class market_env(gym.Env):
         # have little place holder for info and truncated as gym requires it
         info = {}
         truncated = False
-        return next_state, round(reward,
-                                 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list
+        return next_state, round(reward, 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list
 
     def market_clearing(self, bid_price, bid_volume, actual_price):
         """
@@ -214,7 +226,7 @@ class market_env(gym.Env):
             Return: overall profit received from market in EUR and realised market price in EUR/MWh
         """
         if bid_price <= actual_price:
-            # bid is sucessful
+            # bid is successful
             reward = bid_volume * (actual_price - self.mc)
 
             if bid_volume > int(self.capacity_current):
@@ -235,9 +247,11 @@ class market_env(gym.Env):
 
                 # its equivalent: reward = reward - remaining * (avg_price - self.mc)
 
-            reward = self.rescale(reward, self.lower_bound, self.upper_bound)
+            #reward = self.rescale_linear(reward, self.lower_bound, self.upper_bound)
+            reward = self.rescale_log(reward,  self.lower_bound, self.upper_bound)
+
         else:
-            # bid is not sucessfull
+            # bid is not successful
             reward = 0
 
         return reward
