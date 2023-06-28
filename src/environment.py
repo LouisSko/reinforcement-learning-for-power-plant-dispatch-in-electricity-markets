@@ -198,8 +198,8 @@ class market_env(gym.Env):
 
         # calculate reward -> scaled profit
         # self.reward = self.rescale_linear(profit, self.lower_bound, self.upper_bound)
-        #self.reward = self.rescale_log(profit,  self.lower_bound, self.upper_bound)
-        self.reward = profit
+        self.reward = self.rescale_log(profit,  self.lower_bound, self.upper_bound)
+
         
         # print('bid price: ', bid_price, ' actual price: ', actual_price, 'bid volume: ', bid_volume, ' current: ',
         #      int(self.capacity_current), 'reward: ', reward, 'date: ', self.date)
