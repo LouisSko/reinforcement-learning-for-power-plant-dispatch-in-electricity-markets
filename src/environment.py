@@ -18,6 +18,8 @@ class market_env(gym.Env):
         super().__init__()
 
         # get rows where all data is available
+        self.reward = None
+        self.bid_price = None
         self.states_list = set(demand.index) & set(re.index) & set(capacity_forecast.index) & set(
             capacity_actual.index) & set(prices.index)
         # defining different points in time of the environment
@@ -146,6 +148,7 @@ class market_env(gym.Env):
             reward = 0
 
         return reward
+
     def step(self, action, TRAIN):
 
         """
@@ -170,39 +173,36 @@ class market_env(gym.Env):
         # bid_volume = action_volume * 20
 
         # set bid_price and bid_volume using an exponential function
-        bid_price = np.power(action_price, 2) * self.mc / 25
-        bid_volume = np.power(action_volume, 2) * self.capacity / 100
+        self.bid_price = np.power(action_price, 2) * self.mc / 25
+        self.bid_volume = np.power(action_volume, 2) * self.capacity / 100
 
         # current capacity of pv 
         self.capacity_current = self.capacity_actual.loc[self.date].values[0] * self.capacity
 
         # market price
-        actual_price = self.prices.loc[self.date].values[0]
+        self.actual_price = self.prices.loc[self.date].values[0]
 
         # list of bid volumes and current capacities to plot it in the tensorboard later
-        self.bid_volume_list.append(bid_volume)
+        self.bid_volume_list.append(self.bid_volume)
         self.capacity_current_list.append(self.capacity_current)
 
         # we only track the average bid price when the bid price can have an impact on the profit
         if self.capacity_current > 0:
-            self.avg_bid_price.append(bid_price)
+            self.avg_bid_price.append(self.bid_price)
 
         # calculate the profit / reward
-        profit = self.market_clearing(bid_price, bid_volume, actual_price)
+        profit = self.market_clearing(self.bid_price, self.bid_volume, self.actual_price)
 
         # add profit to list
         self.profit_list.append(profit)
 
-        reward = self.rescale_linear(profit, self.lower_bound, self.upper_bound)
-        # reward = self.rescale_log(reward,  self.lower_bound, self.upper_bound)
-
+        # calculate reward -> scaled profit
+        # self.reward = self.rescale_linear(profit, self.lower_bound, self.upper_bound)
+        #self.reward = self.rescale_log(profit,  self.lower_bound, self.upper_bound)
+        self.reward = profit
+        
         # print('bid price: ', bid_price, ' actual price: ', actual_price, 'bid volume: ', bid_volume, ' current: ',
         #      int(self.capacity_current), 'reward: ', reward, 'date: ', self.date)
-
-        self.bid_volume = bid_volume
-        self.bid_price = bid_price
-        self.da_price = actual_price
-        self.reward = reward
 
         # check if terminal state and define the next day that is used
         if self.iter == self.eps_length - 1:
@@ -220,7 +220,8 @@ class market_env(gym.Env):
         # have little place holder for info and truncated as gym requires it
         info = {}
         truncated = False
-        return next_state, round(reward, 4), self.is_terminal, truncated, info
+        return next_state, round(self.reward, 4), self.is_terminal, truncated, info
+
     def market_clearing(self, bid_price, bid_volume, actual_price):
         """
             A function that calculates the output the day-ahead market would give when the selcted bid is submitted [EUR]

@@ -118,7 +118,6 @@ if __name__ == '__main__':
             state = next_state
             current_ep_reward += reward
 
-
             if TRAIN:
                 tb.add_scalars('Bid Capacity', {'bid': env.bid_volume_list[-1], 'cap': env.capacity_current_list[-1]}, global_step=time_step)
 
