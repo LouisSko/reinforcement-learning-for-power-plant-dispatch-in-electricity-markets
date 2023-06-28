@@ -28,6 +28,7 @@ class market_env(gym.Env):
         self.avg_bid_price = []
         self.capacity_current_list = []
         self.bid_volume_list = []
+        self.profit_list = []
 
         # set lower and upper bound to rescale rewards to -1 and 1
         self.lower_bound = lower_bound
@@ -178,10 +179,6 @@ class market_env(gym.Env):
         # market price
         actual_price = self.prices.loc[self.date].values[0]
 
-        # for training and the reward function it's better to only allow positive prices
-        # if actual_price < 0:
-        #    actual_price = 0
-
         # list of bid volumes and current capacities to plot it in the tensorboard later
         self.bid_volume_list.append(bid_volume)
         self.capacity_current_list.append(self.capacity_current)
@@ -191,7 +188,13 @@ class market_env(gym.Env):
             self.avg_bid_price.append(bid_price)
 
         # calculate the profit / reward
-        reward = self.market_clearing(bid_price, bid_volume, actual_price)
+        profit = self.market_clearing(bid_price, bid_volume, actual_price)
+
+        # add profit to list
+        self.profit_list.append(profit)
+
+        reward = self.rescale_linear(profit, self.lower_bound, self.upper_bound)
+        # reward = self.rescale_log(reward,  self.lower_bound, self.upper_bound)
 
         # print('bid price: ', bid_price, ' actual price: ', actual_price, 'bid volume: ', bid_volume, ' current: ',
         #      int(self.capacity_current), 'reward: ', reward, 'date: ', self.date)
@@ -217,7 +220,7 @@ class market_env(gym.Env):
         # have little place holder for info and truncated as gym requires it
         info = {}
         truncated = False
-        return next_state, round(reward, 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list
+        return next_state, round(reward, 4), self.is_terminal, truncated, info, self.avg_bid_price, self.bid_volume_list, self.capacity_current_list, self.profit_list
 
     def market_clearing(self, bid_price, bid_volume, actual_price):
         """
@@ -227,7 +230,7 @@ class market_env(gym.Env):
         """
         if bid_price <= actual_price:
             # bid is successful
-            reward = bid_volume * (actual_price - self.mc)
+            profit = bid_volume * (actual_price - self.mc)
 
             if bid_volume > int(self.capacity_current):
                 # agent has to buy at the market for a higher price. Simplified assumptions
@@ -242,19 +245,16 @@ class market_env(gym.Env):
                 remaining = bid_volume - int(self.capacity_current)
 
                 # update the reward
-                reward = reward - remaining * (actual_price - self.mc)  # substract the excess reward from the reward which should not be granted
-                reward = reward + remaining * (actual_price - avg_price)  # add the costs of buying additional energy. avg_price is essentially the new mc's
+                profit = profit - remaining * (actual_price - self.mc)  # substract the excess reward from the reward which should not be granted
+                profit = profit + remaining * (actual_price - avg_price)  # add the costs of buying additional energy. avg_price is essentially the new mc's
 
                 # its equivalent: reward = reward - remaining * (avg_price - self.mc)
 
-            reward = self.rescale_linear(reward, self.lower_bound, self.upper_bound)
-            #reward = self.rescale_log(reward,  self.lower_bound, self.upper_bound)
-
         else:
             # bid is not successful
-            reward = 0
+            profit = 0
 
-        return reward
+        return profit
 
 
 
