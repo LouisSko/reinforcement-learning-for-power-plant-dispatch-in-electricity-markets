@@ -127,14 +127,14 @@ if __name__ == '__main__':
             if time_step % update_timestep == 0:
                 if TRAIN:
                     ppo_agent.update()
-                    tb.add_scalar('Average Reward', np.mean(avg_rewards[-1000:]), i_episode)
-                    tb.add_scalar('Bid Price', np.mean(avg_bid_price[-1000:]), i_episode)
+                    tb.add_scalar('Average Reward', np.mean(avg_rewards[-update_timestep:]), i_episode)
+                    tb.add_scalar('Average Bid Price', np.mean(avg_bid_price[-update_timestep:]), i_episode)
                 else:
                     df = pd.DataFrame(avg_bid_price)
                     print(df.value_counts())
                     sys.exit()
 
-                print(f'Episode {i_episode} out of {n_episodes}. Average Reward {np.mean(avg_rewards[-1000:])}')
+                print(f'Episode {i_episode} out of {n_episodes}. Average Reward {np.mean(avg_rewards[-update_timestep:])}')
 
         if TRAIN and (i_episode == 195000 or i_episode == 100000 or i_episode == 50000):
             print("saving model ... ")
