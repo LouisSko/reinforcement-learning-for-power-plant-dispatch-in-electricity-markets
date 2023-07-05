@@ -51,16 +51,15 @@ if __name__ == '__main__':
     df_demand, df_demand_scaled, df_vre, df_vre_scaled, df_gen, df_gen_scaled, df_solar_cap_forecast, df_solar_cap_actual, df_mcp = read_processed_files()
 
     # set lower and upper bound for the rescaling to -1 and 1 of the rewards
-    lower_bound = -10000
-    upper_bound = 10000
+    lower_bound = -20000
+    upper_bound = 20000
 
     # initialize the market/gym environment
     env = market_env(demand=df_demand_scaled, re=df_vre_scaled, capacity_forecast=df_solar_cap_forecast,
                      capacity_actual=df_solar_cap_actual, prices=df_mcp, eps_length=24, capacity=200, mc=50,
                      lower_bound=lower_bound, upper_bound=upper_bound)
-    
-    
-    n_episodes = 50000   # break training loop if i_episodes > n_episodes
+
+    n_episodes = 200_000   # break training loop if i_episodes > n_episodes
 
     # hyperparameters 
     # most hyperparameters are chosen based on the default of stable baselines 3
@@ -129,6 +128,7 @@ if __name__ == '__main__':
                     tb.add_scalar('Average Reward', np.mean(avg_rewards[-update_timestep:]), i_episode)
                     tb.add_scalar('Average Bid Price', np.mean(env.avg_bid_price[-update_timestep:]), i_episode)
                     tb.add_scalar('Average Profit', np.mean(env.profit_list[-update_timestep:]), i_episode)
+                    tb.add_scalar('Average Profit Heuristic', np.mean(env.profit_heuristic_list[-update_timestep:]), i_episode)
                 else:
                     df = pd.DataFrame(env.avg_bid_price)
                     print(df.value_counts())

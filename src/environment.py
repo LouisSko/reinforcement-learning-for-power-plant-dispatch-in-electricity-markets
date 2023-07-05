@@ -18,8 +18,6 @@ class market_env(gym.Env):
         super().__init__()
 
         # get rows where all data is available
-        self.reward = None
-        self.bid_price = None
         self.states_list = set(demand.index) & set(re.index) & set(capacity_forecast.index) & set(
             capacity_actual.index) & set(prices.index)
         # defining different points in time of the environment
@@ -31,6 +29,14 @@ class market_env(gym.Env):
         self.capacity_current_list = []
         self.bid_volume_list = []
         self.profit_list = []
+        self.profit_heuristic_list = []
+
+        # initialize variables
+        self.bid_price_heuristic = None
+        self.bid_volume_heuristic = None
+        self.reward = None
+        self.bid_price = None
+        self.profit_heuristic = None
 
         # set lower and upper bound to rescale rewards to -1 and 1
         self.lower_bound = lower_bound
@@ -74,7 +80,7 @@ class market_env(gym.Env):
 
         # expanded shape to incorporate expected forecast
         high = np.ones(15)
-        last_element = np.array([self.mc / 10])
+        last_element = np.array([self.mc / self.mc])
         high = np.concatenate((high, last_element))
         self.observation_space = Box(low=np.zeros(16), high=high,
                                      shape=(16,))
@@ -87,8 +93,8 @@ class market_env(gym.Env):
         # TODO: ideal would be the submission of a bidding curve as in reality
 
         self.action_space = Tuple((
-            Discrete(11),  # Price action space (0 to 49)
-            Discrete(11)  # Volume action space (0 to 9)
+            Discrete(50),  # Price action space (0 to 49)
+            Discrete(50)  # Volume action space (0 to 9)
         ))
 
     # function that sampels days from the data
@@ -127,7 +133,7 @@ class market_env(gym.Env):
                                  self._wind_off,
                                  self._wind_on,
                                  self._capacity,
-                                 self.mc / 10), axis=None)  # why division by 10?
+                                 self.mc / self.mc), axis=None)  # why division by 10?
 
         # if the last time steps do not exist (e.g. end of the beginning of the day -> add zeros)
         if concat.size <= self.observation_space.shape[0]:
@@ -136,6 +142,11 @@ class market_env(gym.Env):
         return concat
 
     def rescale_linear(self, profit, lower_bound, upper_bound):
+        reward = (profit - lower_bound) / (upper_bound - lower_bound) * 2 - 1
+        return reward
+
+    def rescale_linearV2(self, profit, lower_bound, upper_bound, bid_price, mc):
+        profit -= abs(mc-bid_price)
         reward = (profit - lower_bound) / (upper_bound - lower_bound) * 2 - 1
         return reward
 
@@ -159,9 +170,6 @@ class market_env(gym.Env):
             The current observation and reward, as well as whether the state is terminal or not.
         """
 
-        # should be at the end of step
-        # self.observation = self.observe_state(self.date)
-
         # get bids from action
         action_price = action[0].item()
         action_volume = action[1].item()
@@ -173,10 +181,14 @@ class market_env(gym.Env):
         # bid_volume = action_volume * 20
 
         # set bid_price and bid_volume using an exponential function
-        self.bid_price = np.power(action_price, 2) * self.mc / 25
-        self.bid_volume = np.power(action_volume, 2) * self.capacity / 100
+        self.bid_price = np.power(action_price, 2) * self.mc / 25 / 25
+        self.bid_volume = np.power(action_volume, 2) * self.capacity / 100 / 25
 
-        # current capacity of pv 
+        # use a heuristic which always uses mc as bid price and the forecasted load as bid volume
+        self.bid_price_heuristic = self.mc
+        self.bid_volume_heuristic = self.capacity_forecast.loc[self.date].values[0] * self.capacity
+
+        # current capacity and forecast of pv
         self.capacity_current = self.capacity_actual.loc[self.date].values[0] * self.capacity
 
         # market price
@@ -190,17 +202,19 @@ class market_env(gym.Env):
         if self.capacity_current > 0:
             self.avg_bid_price.append(self.bid_price)
 
-        # calculate the profit / reward
+        # calculate the profit
         profit = self.market_clearing(self.bid_price, self.bid_volume, self.actual_price)
+        profit_heuristic = self.market_clearing(self.bid_price_heuristic, self.bid_volume_heuristic, self.actual_price)
 
         # add profit to list
         self.profit_list.append(profit)
+        self.profit_heuristic_list.append(profit_heuristic)
 
         # calculate reward -> scaled profit
+        self.reward = self.rescale_linearV2(profit, self.lower_bound, self.upper_bound, self.bid_price, self.mc)
         # self.reward = self.rescale_linear(profit, self.lower_bound, self.upper_bound)
-        self.reward = self.rescale_log(profit,  self.lower_bound, self.upper_bound)
+        # self.reward = self.rescale_log(profit,  self.lower_bound, self.upper_bound)
 
-        
         # print('bid price: ', bid_price, ' actual price: ', actual_price, 'bid volume: ', bid_volume, ' current: ',
         #      int(self.capacity_current), 'reward: ', reward, 'date: ', self.date)
 
