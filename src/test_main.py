@@ -32,4 +32,5 @@ def test_select_action(common_resources):
     # Test action selection
     state = torch.rand(state_dim)  # Random state
     action, _, _, _, _ = ppo_agent.select_action(state)
-    assert isinstance(action.item(), int)  # Convert tensor to integer and check
+    assert isinstance(action, torch.Tensor), "action is not a tensor"
+    assert isinstance(action.item(), int),  "action.item() is not an integer"
