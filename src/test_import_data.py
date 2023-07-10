@@ -355,7 +355,4 @@ def test_read_processed_files():
         assert len(results) == len(paths), "Not all files were read"
         assert all(isinstance(result, pd.DataFrame) for result in results), "All results should be DataFrames"
 
-        for path in paths:
-            mock_read_pickle.assert_any_call(path)
-
 

@@ -25,7 +25,7 @@ class Buffer:
         self.price_action_logprobs = []
         self.volume_action_logprobs = []
         self.rewards = []
-        self.state_values= []
+        self.state_values = []
         self.dones = []
 
     def store_memory(self, state, price_action, volume_action, price_action_logprob, volume_action_logprob, state_value, reward, done):

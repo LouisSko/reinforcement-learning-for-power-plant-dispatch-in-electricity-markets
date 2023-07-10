@@ -271,7 +271,6 @@ class market_env(gym.Env):
         return profit
 
 
-
     def reset(self, TRAIN):
         """
             The first method called before the experiment starts, as it resets the environment.
@@ -291,22 +290,34 @@ class market_env(gym.Env):
         return self.observe_state(self.date), {}
 
     def get_random_new_date(self, TRAIN):
-        # pick new random DATE (note not hour, we want our Rl agent to look at each day)
-        # the new state is then set to the first hour
+        """
+        Pick a random date and time from the available dataset.
+        If in training mode, the new state is set to the first hour of a random day.
+        For testing, a random day in July 2021 is selected.
 
+        Args:
+            TRAIN (boolean): Flag to determine if the agent is in training or testing mode.
+
+        Returns:
+            The randomly selected date and time.
+        """
+
+        # If in training mode, pick a new random day.
         if TRAIN:
-            i = random.randrange(len(self.time_list_days) - 1)
-            self.date = self.time_list_days.iloc[i]
 
-            # Extract the month and year from the date to leave some data for testing -> we should do a train, test split
-            month = self.date.strftime('%m')
-            year = self.date.strftime('%Y')
+            random_index = random.randrange(len(self.time_list_days) - 1)
 
-            if month == '09' and year == '2021':
+            # Select the random day.
+            self.date = self.time_list_days.iloc[random_index]
+
+            # If the selected day is in September 2021, recursively select another day.
+            # This leaves data from September 2021 for testing.
+            if self.date.strftime('%m') == '09' and self.date.strftime('%Y') == '2021':
                 self.get_random_new_date(TRAIN)
 
+        # If in testing mode, pick a random day in July 2021.
         else:
-            # testing
-            day = random.randrange(1, 28)
-            self.date = pd.Timestamp('2021-07-{day} 00:00:00+02:00'.format(day=str(day)))
+            random_day = random.randrange(1, 28)
+            self.date = pd.Timestamp('2021-07-{day} 00:00:00+02:00'.format(day=str(random_day)))
+
         return self.date
