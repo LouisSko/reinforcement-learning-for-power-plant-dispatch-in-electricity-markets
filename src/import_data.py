@@ -7,12 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 # you can ask for it here https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html
 # the instructions are given below chapter "2. Authentication and Authorisation"
 
-# your_key = '9ab2e188-d454-44be-bce7-ea9dc8863723'
-your_key = '3a72c137-c318-4dd5-ac00-2d3be87966a8'
-
-country_code = 'DE_LU'  # Germany-Luxembourg
-
-client = EntsoePandasClient(api_key=your_key)
+COUNTRY_CODE = 'DE_LU'  # Germany-Luxembourg
 
 # set directory and define the file paths
 parent_directory = os.path.join('../.', 'data')
@@ -26,6 +21,11 @@ df_mcp_path = os.path.join(parent_directory, 'df_mcp.pkl')
 df_solar_cap_actual_path = os.path.join(parent_directory, 'df_solar_cap_actual.pkl')
 df_solar_cap_forecast_path = os.path.join(parent_directory, 'df_solar_cap_forecast.pkl')
 
+
+def get_entsoe_client():
+    api_key = '3a72c137-c318-4dd5-ac00-2d3be87966a8'
+    # api_key = '9ab2e188-d454-44be-bce7-ea9dc8863723'
+    return EntsoePandasClient(api_key=api_key)
 
 def get_demand(start, end):
     """
@@ -41,9 +41,10 @@ def get_demand(start, end):
     Returns:
     Demand df for specified start and end date
     """
+    client = get_entsoe_client()
 
     # make api call
-    df_load_prog = pd.DataFrame(client.query_load_forecast(country_code, start=start, end=end))
+    df_load_prog = pd.DataFrame(client.query_load_forecast(COUNTRY_CODE, start=start, end=end))
 
     # rename columns
     df_load_prog.columns = ['forecasted_load [MWh]']
@@ -82,8 +83,10 @@ def get_vre(start, end):
     Renewable Infeed array for specified start and end date
     """
 
+    client = get_entsoe_client()
+
     # make api call
-    df_re_prog = pd.DataFrame(client.query_wind_and_solar_forecast(country_code, start=start, end=end, psr_type=None))
+    df_re_prog = pd.DataFrame(client.query_wind_and_solar_forecast(COUNTRY_CODE, start=start, end=end, psr_type=None))
 
     # rename columns
     df_re_prog.columns = ['Forecasted Solar [MWh]', 'Forecasted Wind Offshore [MWh]', 'Forecasted Wind Onshore [MWh]']
@@ -122,9 +125,10 @@ def get_solar_actual(start, end):
     Returns:
     Renewable Infeed array for specified start and end date
     """
+    client = get_entsoe_client()
 
     # make api call
-    solar_actual = pd.DataFrame(client.query_generation(country_code, start=start, end=end, psr_type=None))
+    solar_actual = pd.DataFrame(client.query_generation(COUNTRY_CODE, start=start, end=end, psr_type=None))
 
     # select data
     solar_actual = solar_actual['Solar'][['Actual Aggregated']].copy()
@@ -163,8 +167,10 @@ def get_solar_estimate(start, end):
     Renewable Infeed array for specified start and end date
     """
 
+    client = get_entsoe_client()
+
     # make api call
-    df_re_prog = pd.DataFrame(client.query_wind_and_solar_forecast(country_code, start=start, end=end, psr_type=None))
+    df_re_prog = pd.DataFrame(client.query_wind_and_solar_forecast(COUNTRY_CODE, start=start, end=end, psr_type=None))
 
     # rename columns
     df_re_prog.columns = ['Forecasted Solar [MWh]', 'Forecasted Wind Offshore [MWh]', 'Forecasted Wind Onshore [MWh]']
@@ -204,8 +210,11 @@ def get_gen(start, end):
     Returns:
     Renewable Infeed array for specified start and end date
     """
+
+    client = get_entsoe_client()
+
     # make api call
-    df_gen_prog = pd.DataFrame(client.query_generation_forecast(country_code, start=start, end=end))
+    df_gen_prog = pd.DataFrame(client.query_generation_forecast(COUNTRY_CODE, start=start, end=end))
 
     # 15 min candles? -> aggregate hourly
     df_gen_prog = aggregate_hourly(df_gen_prog)
@@ -234,14 +243,20 @@ def get_mcp(start, end):
     Day-Ahead market price array for specified start and end date
     in EUR/MWh
     """
+
+    client = get_entsoe_client()
+
     # make api call
-    df_prices = pd.DataFrame(client.query_day_ahead_prices(country_code, start=start, end=end))
+    df_prices = pd.DataFrame(client.query_day_ahead_prices(COUNTRY_CODE, start=start, end=end))
+
+    df_prices.columns = ['market_price']
 
     # drop nas
     df_prices = df_prices.dropna()
 
     # drop days with incomplete number of observations (!=24) per day. -> leap years
     df_prices = drop_incomplete_datapoints(df_prices)
+
 
     return df_prices
 
@@ -252,8 +267,6 @@ def aggregate_hourly(df):
 
 
 def drop_incomplete_datapoints(df):
-    # hier werden unter anderem die Daten für Schaltjahre rausgeworfen
-    # TODO: Funktion abändern, sodass Schaltjahre berücksichtigt werden in den Daten
     df = df.groupby(df.index.date).filter(lambda x: len(x) == 24)
     return df
 
@@ -313,3 +326,5 @@ def read_processed_files():
 
 if __name__ == '__main__':
     get_data()
+
+
