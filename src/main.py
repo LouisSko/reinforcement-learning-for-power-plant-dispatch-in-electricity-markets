@@ -18,7 +18,6 @@ from torch.utils.tensorboard import SummaryWriter
 import sys
 import pandas as pd
 
-
 # Since we don't work with large input and hidden layers (matrices like in CNN's) we rather recommend to use the cpu
 """
 if(torch.cuda.is_available()): 
