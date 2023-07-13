@@ -87,13 +87,13 @@ class ActorCritic(nn.Module):
         return price_output_dist, volume_output_dist, state_value
 
 class PPOAgent:
-    def __init__(self, state_dim, price_action_dim, volume_action_dim, lr_actor, lr_critic, gamma, n_epochs, eps_clip, device):
+    def __init__(self, state_dim, price_action_dim, volume_action_dim, lr_actor, lr_critic, gamma, n_epochs, eps_clip, batch_size, device):
          
         self.device = device
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.n_epochs = n_epochs
-        
+        self.batch_size = batch_size
         self.buffer = Buffer()
 
         self.policy = ActorCritic(state_dim, price_action_dim, volume_action_dim).to(self.device)
@@ -160,10 +160,10 @@ class PPOAgent:
 
         # creating the batches: we generate arrays with random indices. They are used later to match the states, actions etc. 
         n_states = len(self.buffer.states)
-        batch_start = np.arange(0, n_states, 64)
+        batch_start = np.arange(0, n_states, self.batch_size)
         indices = np.arange(n_states, dtype=np.int64)
         np.random.shuffle(indices)
-        batches = [indices[i:i+64] for i in batch_start]
+        batches = [indices[i:i+self.batch_size] for i in batch_start]
 
         # for K epochs
         for _ in range(self.n_epochs):

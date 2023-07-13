@@ -19,10 +19,11 @@ print("RUNNING ON ", device)
 if __name__ == '__main__':
 
     # define search space
-    param_grid = {'lower_bound': [-20000, -10000],  # lower bound for the reward scaling
+    param_grid = {'lower_bound': [-20000],  # lower bound for the reward scaling
                   'upper_bound': [20000],  # upper bound for the reward scaling
+                  'batch_size': [16, 32, 64],  # define batch size
                   'n_episodes': [50000],  # number of episodes to train
-                  'update_timestep': [2048],  # update policy every 2048 steps
+                  'update_timestep': [512, 1024, 2048],  # update policy every 2048 steps
                   'n_epochs': [10],  # update policy for K epochs in one PPO update
                   'eps_clip': [0.22],  # clip  parameter for PPO
                   'gamma': [0.99],  # discount factor

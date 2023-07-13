@@ -31,6 +31,7 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
     # set hyperparameter
     lower_bound = hp_dict['lower_bound']
     upper_bound = hp_dict['upper_bound']
+    batch_size = hp_dict['batch_size']
     n_episodes = hp_dict['n_episodes']
     update_timestep = hp_dict['update_timestep']
     n_epochs = hp_dict['n_epochs']
@@ -57,7 +58,7 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
 
     # initialize the PPO agent
     ppo_agent = PPOAgent(state_dim, price_action_dim, volume_action_dim, lr_actor, lr_critic, gamma, n_epochs, eps_clip,
-                         device)
+                         batch_size, device)
     if not train:
         ppo_agent.load(model_checkpoint)
 
@@ -166,6 +167,7 @@ if __name__ == '__main__':
     # most hyperparameters are chosen based on the default of stable baselines 3
     hp_dict = {'lower_bound': -20000,  # lower bound for the reward scaling
                'upper_bound': 20000,  # upper bound for the reward scaling
+               'batch_size': 16,  # define batch size
                'n_episodes': 50000,  # number of episodes to train
                'update_timestep': 2048,  # update policy every 2048 steps
                'n_epochs': 10,  # update policy for K epochs in one PPO update
