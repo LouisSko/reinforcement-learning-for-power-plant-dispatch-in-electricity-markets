@@ -1,6 +1,6 @@
 # This is the programmed Environment in which the power plant acts
 import gymnasium as gym
-from gymnasium.spaces import Box, Discrete, Tuple
+from gymnasium.spaces import Box, Discrete, Tuple, MultiDiscrete
 import numpy as np
 import random
 import pandas as pd
@@ -10,12 +10,14 @@ import pandas as pd
 class market_env(gym.Env):
 
     def __init__(self, demand, re, capacity_forecast, capacity_actual, prices, eps_length=24, capacity=200, mc=30,
-                 lower_bound=-10000, upper_bound=10000):
+                 lower_bound=-10000, upper_bound=10000, train=True):
         """
 
         """
         # get predefined stuff
         super().__init__()
+
+        self.train = train
 
         # get rows where all data is available
         self.states_list = set(demand.index) & set(re.index) & set(capacity_forecast.index) & set(
@@ -83,7 +85,7 @@ class market_env(gym.Env):
         last_element = np.array([self.mc / self.mc])
         high = np.concatenate((high, last_element))
         self.observation_space = Box(low=np.zeros(16), high=high,
-                                     shape=(16,))
+                                     shape=(16,), dtype=np.float64)
 
         # define possible ACTIONS:
         # in the market the agent is currently only able to set the  price (action) at which it bids and the volume is fixed
@@ -91,11 +93,17 @@ class market_env(gym.Env):
 
         # TODO: bigger action space, also choose volume
         # TODO: ideal would be the submission of a bidding curve as in reality
+        
+        #self.action_space = Tuple((
+        #    Discrete(50),  # Price action space (0 to 49)
+        #    Discrete(50)  # Volume action space (0 to 9)
+        #))
 
-        self.action_space = Tuple((
-            Discrete(50),  # Price action space (0 to 49)
-            Discrete(50)  # Volume action space (0 to 9)
+        self.action_space = MultiDiscrete((
+            50,
+            50
         ))
+
 
     # function that sampels days from the data
     def observe_state(self, date):
@@ -160,7 +168,7 @@ class market_env(gym.Env):
 
         return reward
 
-    def step(self, action, TRAIN):
+    def step(self, action):
 
         """
             Take a step in environment, which equals bidding in one hour.
@@ -221,7 +229,7 @@ class market_env(gym.Env):
         # check if terminal state and define the next day that is used
         if self.iter == self.eps_length - 1:
             self.is_terminal = True
-            self.date = self.get_random_new_date(TRAIN)
+            self.date = self.get_random_new_date()
 
         else:
             self.is_terminal = False
@@ -271,7 +279,7 @@ class market_env(gym.Env):
         return profit
 
 
-    def reset(self, TRAIN):
+    def reset(self, **kwargs):
         """
             The first method called before the experiment starts, as it resets the environment.
             Also it is called between different learning session, alias tryiing out new algorithms etc
@@ -285,11 +293,11 @@ class market_env(gym.Env):
         # set state to be non-terminal
         self.is_terminal = False
         # reset date to randome new date
-        self.date = self.get_random_new_date(TRAIN)
+        self.date = self.get_random_new_date()
 
         return self.observe_state(self.date), {}
 
-    def get_random_new_date(self, TRAIN):
+    def get_random_new_date(self):
         """
         Pick a random date and time from the available dataset.
         If in training mode, the new state is set to the first hour of a random day.
@@ -303,7 +311,7 @@ class market_env(gym.Env):
         """
 
         # If in training mode, pick a new random day.
-        if TRAIN:
+        if self.train:
 
             random_index = random.randrange(len(self.time_list_days) - 1)
 
@@ -313,7 +321,7 @@ class market_env(gym.Env):
             # If the selected day is in September 2021, recursively select another day.
             # This leaves data from September 2021 for testing.
             if self.date.strftime('%m') == '09' and self.date.strftime('%Y') == '2021':
-                self.get_random_new_date(TRAIN)
+                self.get_random_new_date()
 
         # If in testing mode, pick a random day in July 2021.
         else:

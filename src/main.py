@@ -49,7 +49,7 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
     # initialize the market/gym environment
     env = market_env(demand=df_demand_scaled, re=df_vre_scaled, capacity_forecast=df_solar_cap_forecast,
                      capacity_actual=df_solar_cap_actual, prices=df_mcp, eps_length=24, capacity=200, mc=50,
-                     lower_bound=lower_bound, upper_bound=upper_bound)
+                     lower_bound=lower_bound, upper_bound=upper_bound, train=True)
 
     # state and action space dimension
     state_dim = env.observation_space.shape[0]
@@ -102,7 +102,7 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
     # training / testing loop
     while i_episode <= n_episodes:
 
-        state, _ = env.reset(train)
+        state, _ = env.reset()
         current_ep_reward = 0
         done = False
 
@@ -117,7 +117,7 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
                 state)
 
             # perform a step in the market environment
-            next_state, reward, done, _, info = env.step([price_action, volume_action], train)
+            next_state, reward, done, _, info = env.step([price_action, volume_action])
 
             if train:
                 # send the transition to the buffer
