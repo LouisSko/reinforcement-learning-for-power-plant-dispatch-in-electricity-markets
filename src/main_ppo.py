@@ -179,5 +179,5 @@ if __name__ == '__main__':
 
     model_checkpoint = os.path.join('../.', 'models/model_50000_episodes.pth')
 
-    rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my_experiments')
+    rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='test')
 

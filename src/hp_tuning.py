@@ -9,7 +9,7 @@ Note: Some basic understanding and Code fragments are inspired from
 import torch
 from itertools import product
 import copy
-from main import rl_agent_run
+from main_ppo import rl_agent_run
 
 # Since we don't work with large input and hidden layers (matrices like in CNN's) we rather recommend to use the cpu
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
