@@ -23,7 +23,7 @@ device = torch.device('cpu')
 print("RUNNING ON ", device)
 
 
-def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my_experiment'):
+def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my_experiment', logging=True):
     # can choose between train and testing
     # setting train to true ignores model_checkpoint
     # tb name specifies the name for the summary writer
@@ -64,6 +64,7 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
 
     # specify paths for logging and model checkpoints
     if train:
+
         # create if folder for tensorboard logs is not created yet
         if not os.path.exists('runs'):
             os.makedirs('runs')
@@ -80,8 +81,9 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
                 suffix += 1
             log_dir = new_log_dir
 
-        # init Tensorboard
-        tb = SummaryWriter(log_dir)
+        if logging:
+            # init Tensorboard
+            tb = SummaryWriter(log_dir)
 
         # Store the hp_dict in a pickle file to load it back in
         with open(os.path.join(log_dir, 'hp_dict.pkl'), 'wb') as f:
@@ -123,9 +125,10 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
                 # send the transition to the buffer
                 ppo_agent.send_memory_to_buffer(state, price_action, volume_action, price_action_logprob,
                                                 volume_action_logprob, state_val, reward, done)
-                tb.add_scalars('Bid Capacity',
-                               {'bid': env.bid_volume_list[-1], 'cap': env.capacity_current_list[-1]},
-                               global_step=time_step)
+                if logging:
+                    tb.add_scalars('Bid Capacity',
+                                   {'bid': env.bid_volume_list[-1], 'cap': env.capacity_current_list[-1]},
+                                   global_step=time_step)
 
             state = next_state
             current_ep_reward += reward
@@ -135,11 +138,13 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
             if time_step % update_timestep == 0:
                 if train:
                     ppo_agent.update()
-                    tb.add_scalar('Average Reward', np.mean(avg_rewards[-update_timestep:]), i_episode)
-                    tb.add_scalar('Average Bid Price', np.mean(env.avg_bid_price[-update_timestep:]), i_episode)
-                    tb.add_scalar('Average Profit', np.mean(env.profit_list[-update_timestep:]), i_episode)
-                    tb.add_scalar('Average Profit Heuristic', np.mean(env.profit_heuristic_list[-update_timestep:]),
-                                  i_episode)
+
+                    if logging:
+                        tb.add_scalar('Average Reward', np.mean(avg_rewards[-update_timestep:]), i_episode)
+                        tb.add_scalar('Average Bid Price', np.mean(env.avg_bid_price[-update_timestep:]), i_episode)
+                        tb.add_scalar('Average Profit', np.mean(env.profit_list[-update_timestep:]), i_episode)
+                        tb.add_scalar('Average Profit Heuristic', np.mean(env.profit_heuristic_list[-update_timestep:]),
+                                      i_episode)
                 else:
                     df = pd.DataFrame(env.avg_bid_price)
                     print(df.value_counts())
@@ -158,13 +163,20 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
         avg_rewards.append(current_ep_reward)
 
     if train:
-        tb.close()
-    env.close()
+        env.close()
+        if logging:
+            tb.close()
+
+
 
 
 if __name__ == '__main__':
 
-    # most hyperparameters are chosen based on the default of stable baselines 3
+
+
+    model_checkpoint = os.path.join('../.', 'models/model_50000_episodes.pth')
+
+    rl_agent_run(    # most hyperparameters are chosen based on the default of stable baselines 3
     hp_dict = {'lower_bound': -20000,  # lower bound for the reward scaling
                'upper_bound': 20000,  # upper bound for the reward scaling
                'batch_size': 16,  # define batch size
@@ -175,9 +187,5 @@ if __name__ == '__main__':
                'gamma': 0.99,  # discount factor
                'lr_actor': 0.0002,  # learning rate for actor network
                'lr_critic': 0.0008  # learning rate for critic network
-               }
-
-    model_checkpoint = os.path.join('../.', 'models/model_50000_episodes.pth')
-
-    rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='test')
+               }, device=device, train=True, model_checkpoint=None, tb_name='test')
 
