@@ -178,10 +178,9 @@ def test_get_random_new_date(market_env_fixture):
 
     env = market_env_fixture
 
-    env.time_list_days = pd.Series(pd.date_range(start='2021-01-01 00:00', end='2021-05-01 02:00', freq='d'))
-
     # Check for training mode
     env.train = True
+    env.time_list_days = pd.Series(pd.date_range(start='2021-01-01 00:00', end='2021-05-01 02:00', freq='d'))
     random_date_train = env.get_random_new_date()
     assert isinstance(random_date_train, pd.Timestamp)
     assert random_date_train.strftime('%m') != '09' or random_date_train.strftime('%Y') != '2021'
