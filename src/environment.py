@@ -9,7 +9,6 @@ import numpy as np
 import random
 import pandas as pd
 
-
 # define the market environment
 class market_env(gym.Env):
     """
