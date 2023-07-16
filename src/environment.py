@@ -288,8 +288,8 @@ class market_env(gym.Env):
         # bid_volume = action_volume * 20
 
         # set bid_price and bid_volume using an exponential function
-        self.bid_price = np.power(action_price, 2) * self.mc / 25 / 25
-        self.bid_volume = np.power(action_volume, 2) * self.capacity / 100 / 25
+        self.bid_price = np.power(action_price, 2) * self.mc / (25 * 25)
+        self.bid_volume = np.power(action_volume, 2) * self.capacity / (100 * 25)
 
         # use a heuristic which always uses mc as bid price and the forecasted load as bid volume
         self.bid_price_heuristic = self.mc

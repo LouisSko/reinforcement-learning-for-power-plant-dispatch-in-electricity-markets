@@ -27,7 +27,6 @@ import os
 device = torch.device('cpu')
 print("RUNNING ON ", device)
 
-
 def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my_experiment', logging=True):
     """
     Trains a PPO agent on a market environment, with the ability to switch between training and testing modes.
@@ -186,12 +185,7 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
             tb.close()
 
 
-
-
 if __name__ == '__main__':
-
-
-
     model_checkpoint = os.path.join('../.', 'models/model_50000_episodes.pth')
 
     rl_agent_run(    # most hyperparameters are chosen based on the default of stable baselines 3
