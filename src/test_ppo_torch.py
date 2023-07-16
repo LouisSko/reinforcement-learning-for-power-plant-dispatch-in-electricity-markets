@@ -41,7 +41,7 @@ def test_actor_critic():
 
 # Test the PPOAgent class
 def test_ppo_agent():
-    ppo_agent = PPOAgent(3, 3, 3, 0.01, 0.01, 0.99, 10, 0.2, torch.device("cpu"))
+    ppo_agent = PPOAgent(3, 3, 3, 0.01, 0.01, 0.99, 10, 0.2, 32, "cpu")
 
     # Test send_memory_to_buffer with mock tensor values
     mock_state = torch.tensor([1.0, 2.0, 3.0])
