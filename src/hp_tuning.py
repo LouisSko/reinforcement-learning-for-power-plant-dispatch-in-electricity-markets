@@ -21,7 +21,7 @@ def hp_tuning():
     # define search space
     param_grid = {'lower_bound': [-20000],  # lower bound for the reward scaling
                   'upper_bound': [20000],  # upper bound for the reward scaling
-                  'batch_size': [32, 64, 128],  # define batch size
+                  'batch_size': [16],  # define batch size
                   'n_episodes': [50000],  # number of episodes to train
                   'update_timestep': [512, 1024, 2048],  # update policy every 2048 steps
                   'n_epochs': [10],  # update policy for K epochs in one PPO update

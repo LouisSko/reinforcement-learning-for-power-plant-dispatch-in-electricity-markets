@@ -38,8 +38,8 @@ if __name__ == '__main__':
 
     if TRAIN:
         model = A2C("MlpPolicy", env, verbose=1, ent_coef=0.01, tensorboard_log=logdir)
-        model.learn(total_timesteps=10000, tb_log_name="A2C")
-        model.save("../models/A2C/ac2_test")
+        model.learn(total_timesteps=1_200_000, tb_log_name="A2C")
+        model.save("../models/A2C/a2c_50000_episodes")
     else:
         avg_rewards = []
         model = A2C.load("../models/A2C/a2c_test")

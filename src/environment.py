@@ -326,6 +326,6 @@ class market_env(gym.Env):
         # If in testing mode, pick a random day in July 2021.
         else:
             random_day = random.randrange(1, 28)
-            self.date = pd.Timestamp('2021-07-{day} 00:00:00+02:00'.format(day=str(random_day)))
+            self.date = pd.Timestamp('2021-09-{day} 00:00:00+02:00'.format(day=str(random_day)))
 
         return self.date

@@ -148,7 +148,6 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
                 else:
                     df = pd.DataFrame(env.avg_bid_price)
                     print(df.value_counts())
-                    sys.exit()
 
                 print(
                     f'Episode {i_episode} out of {n_episodes}. Average Reward {np.mean(avg_rewards[-update_timestep:])}. Average Profit: {np.mean(env.profit_list[-update_timestep:])}')
