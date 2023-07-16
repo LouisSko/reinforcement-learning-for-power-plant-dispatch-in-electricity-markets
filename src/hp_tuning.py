@@ -1,5 +1,7 @@
 """
-Note: Some basic understanding and Code fragments are inspired from 
+This script performs hyperparameter tuning for a Proximal Policy Optimization (PPO) agent on a custom market environment. It defines a grid of hyperparameters, generates all combinations of these parameters, and trains a separate PPO agent for each combination. The agent's performance is logged using TensorBoard for each set of hyperparameters, enabling comparison and selection of the best performing hyperparameters. 
+
+The PPO implementation used in this script is based on insights and code fragments from the following sources:
 - https://arxiv.org/pdf/1707.06347.pdf
 - https://stackoverflow.com/questions/46422845/what-is-the-way-to-understand-proximal-policy-optimization-algorithm-in-rl
 - https://github.com/philtabor/Youtube-Code-Repository/tree/master/ReinforcementLearning/PolicyGradient/PPO/torch
@@ -17,7 +19,10 @@ device = torch.device('cpu')
 print("RUNNING ON ", device)
 
 def hp_tuning():
-
+    """
+    Function that performs hyperparameter tuning for the PPO agent.
+    It trains a separate agent for each combination of hyperparameters and logs the performance.
+    """
     # define search space
     param_grid = {'lower_bound': [-20000],  # lower bound for the reward scaling
                   'upper_bound': [20000],  # upper bound for the reward scaling

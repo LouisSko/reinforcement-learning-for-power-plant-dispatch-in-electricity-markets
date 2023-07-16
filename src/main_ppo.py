@@ -1,4 +1,9 @@
 """
+This script trains a Proximal Policy Optimization (PPO) agent on a market environment. The market data is obtained
+from a pickle file, the environment and agent are initialized, and then the agent is trained through a series of episodes.
+Training results and agent performance are logged and saved.
+
+This implementation is based on insights and code fragments from:
 Note: Some basic understanding and Code fragments are inspired from 
 - https://arxiv.org/pdf/1707.06347.pdf
 - https://stackoverflow.com/questions/46422845/what-is-the-way-to-understand-proximal-policy-optimization-algorithm-in-rl
@@ -22,13 +27,25 @@ import os
 device = torch.device('cpu')
 print("RUNNING ON ", device)
 
-
 def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my_experiment', logging=True):
-    # can choose between train and testing
-    # setting train to true ignores model_checkpoint
-    # tb name specifies the name for the summary writer
+    """
+    Trains a PPO agent on a market environment, with the ability to switch between training and testing modes.
+    setting train to true ignores model_checkpoint
+    tb name specifies the name for the summary writer
 
-    # set hyperparameter
+    Args:
+    hp_dict (dict): A dictionary of hyperparameters for the PPO agent.
+    device (str): The device (cpu or gpu) on which computations will be performed.
+    train (bool): Whether to train a new model (if True) or load a pre-trained model for testing (if False).
+    model_checkpoint (str): The path of the pre-trained model to load when train=False.
+    tb_name (str): The name of the tensorboard log directory.
+    logging (bool): Whether to log results using tensorboard.
+
+    Returns:
+        None. Trains the model and logs/saves results.
+    """
+
+    # set hyperparameter from the provided dictionary
     lower_bound = hp_dict['lower_bound']
     upper_bound = hp_dict['upper_bound']
     batch_size = hp_dict['batch_size']
@@ -167,12 +184,7 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
             tb.close()
 
 
-
-
 if __name__ == '__main__':
-
-
-
     model_checkpoint = os.path.join('../.', 'models/model_50000_episodes.pth')
 
     rl_agent_run(    # most hyperparameters are chosen based on the default of stable baselines 3

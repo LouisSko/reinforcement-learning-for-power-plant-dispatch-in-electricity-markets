@@ -1,3 +1,7 @@
+"""
+Defines a PPO trading agent capable of making decisions based on price and volume. 
+It uses a dual actor-critic model, stores experiences in a buffer for learning, and can save/load model parameters for future use.
+"""
 import torch
 import torch.nn as nn
 from torch.distributions import MultivariateNormal
@@ -6,19 +10,25 @@ import numpy as np
 import typing
 from typing import List, Tuple, Union
 
-
+# This Buffer class is used to store states, actions, and rewards for training the agent.
 class Buffer:
+    """
+    This class acts as a memory buffer for the PPO agent.
+    It stores state, action, reward, done and other values for each time step, 
+    which are then used for updating the policy network.
+    """
     def __init__(self):
-        self.price_actions = []
-        self.volume_actions = []
-        self.states = []
-        self.price_action_logprobs = []
-        self.volume_action_logprobs = []
-        self.rewards = []
-        self.state_values = []
-        self.dones = []
-    
-    def clear(self):
+        """
+        Initializes the Buffer object with empty lists for each stored value.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        # These buffers store the agent's interactions with the environment.
         self.price_actions = []
         self.volume_actions = []
         self.states = []
@@ -28,7 +38,44 @@ class Buffer:
         self.state_values = []
         self.dones = []
 
+    # This method clears the buffer   
+    def clear(self):
+        """
+        Clears all stored values from the buffer.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.price_actions = []
+        self.volume_actions = []
+        self.states = []
+        self.price_action_logprobs = []
+        self.volume_action_logprobs = []
+        self.rewards = []
+        self.state_values = []
+        self.dones = []
+
+    # This method stores a new memory into the buffer
     def store_memory(self, state, price_action, volume_action, price_action_logprob, volume_action_logprob, state_value, reward, done):
+        """
+        Stores the given values in the buffer.
+
+        Args:
+            state (Tensor): The current state of the environment.
+            price_action (Tensor): The price action chosen by the agent.
+            volume_action (Tensor): The volume action chosen by the agent.
+            price_action_logprob (Tensor): The log-probability of the chosen price action.
+            volume_action_logprob (Tensor): The log-probability of the chosen volume action.
+            state_value (Tensor): The predicted value of the current state.
+            reward (Tensor): The reward received after taking the actions.
+            done (bool): Whether the episode has ended.
+
+        Returns:
+            None
+        """
         self.states.append(state)
 
         self.price_actions.append(price_action)
@@ -41,9 +88,31 @@ class Buffer:
         self.rewards.append(reward)
         self.dones.append(done)
 
-
+# ActorCritic class defines the neural network architecture for the PPO agent
 class ActorCritic(nn.Module):
+    """
+    This class defines the Actor-Critic model for the PPO agent.
+
+    Args:
+        state_dim (int): The dimension of the state space.
+        price_action_dim (int): The dimension of the price action space.
+        volume_action_dim (int): The dimension of the volume action space.
+
+    Returns:
+        None. This is a class for creating ActorCritic objects.
+    """
     def __init__(self, state_dim, price_action_dim, volume_action_dim):
+        """
+        Initializes the ActorCritic object with an actor network and a critic network.
+
+        Args:
+            state_dim (int): The dimension of the state space.
+            price_action_dim (int): The dimension of the price action space.
+            volume_action_dim (int): The dimension of the volume action space.
+
+        Returns:
+            None
+        """
         super(ActorCritic, self).__init__()
 
         # note: we decided to use a ReLU() activation function for both networks other than proposed in some papers (they use tanh())
@@ -75,6 +144,17 @@ class ActorCritic(nn.Module):
                     )
         
     def forward(self, state):
+        """
+        Performs a forward pass through the actor and critic networks.
+
+        Args:
+            state (Tensor): The current state of the environment.
+
+        Returns:
+            Tuple[Tensor, Tensor, Tensor]: Returns the output distribution of the price and volume actions from the actor network and the state value from the critic network.
+        """
+    
+        # Forward pass through actor and critic network
         actor = self.actor(state)
         price_output_dist = self.price_output(actor)
         volume_output_dist = self.volume_output(actor)
@@ -86,9 +166,31 @@ class ActorCritic(nn.Module):
         state_value = self.critic(state)
         return price_output_dist, volume_output_dist, state_value
 
+# PPOAgent class encapsulates the PPO learning algorithm
 class PPOAgent:
+    """
+    The PPOAgent class creates an agent that interacts with the environment and 
+    learns from it using the Proximal Policy Optimization algorithm. 
+    """
     def __init__(self, state_dim, price_action_dim, volume_action_dim, lr_actor, lr_critic, gamma, n_epochs, eps_clip, batch_size, device):
-         
+        """
+        Initializes the PPOAgent object with an ActorCritic policy, 
+        a memory Buffer and some necessary parameters.
+
+        Args:
+            state_dim (int): The dimension of the state space.
+            price_action_dim (int): The dimension of the price action space.
+            volume_action_dim (int): The dimension of the volume action space.
+            lr_actor (float): The learning rate for the actor network.
+            lr_critic (float): The learning rate for the critic network.
+            gamma (float): The discount factor for future rewards.
+            n_epochs (int): The number of epochs to train the agent.
+            eps_clip (float): The clipping epsilon for the ratio r in PPO's objective function.
+            device (str): The device (cpu or gpu) on which computations will be performed.
+
+        Returns:
+            None
+        """              
         self.device = device
         self.gamma = gamma
         self.eps_clip = eps_clip
@@ -96,6 +198,7 @@ class PPOAgent:
         self.batch_size = batch_size
         self.buffer = Buffer()
 
+        # Initialize the policy and the optimizer
         self.policy = ActorCritic(state_dim, price_action_dim, volume_action_dim).to(self.device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.actor.parameters(), 'lr': lr_actor},
@@ -107,12 +210,38 @@ class PPOAgent:
         
         self.MseLoss = nn.MSELoss()
 
-
+    # Method to store experiences to the buffer
     def send_memory_to_buffer(self, state, price_action, volume_action,  price_action_logprob, volume_action_logprob, state_value, reward, done):
-        # store transistions into the buffer
+        """
+        Stores the current transition into the buffer. The transition includes state, action, action log 
+        probability, state value, reward, and the done flag.
+
+        Args:
+            state (torch.Tensor): The current state.
+            price_action (torch.Tensor): The price action chosen by the agent.
+            volume_action (torch.Tensor): The volume action chosen by the agent.
+            price_action_logprob (torch.Tensor): The log probability of the price action.
+            volume_action_logprob (torch.Tensor): The log probability of the volume action.
+            state_value (torch.Tensor): The value of the current state estimated by the critic network.
+            reward (float): The reward received after taking the action.
+            done (bool): A flag indicating whether the episode is done.
+
+        Returns:
+            None
+        """
         self.buffer.store_memory(state, price_action, volume_action,  price_action_logprob, volume_action_logprob, state_value, reward, done)
 
+# 'select_action' method chooses an action given a state
     def select_action(self, state):
+        """
+        Selects an action based on the given state.
+
+        Args:
+            state (Tensor): The current state of the environment.
+
+        Returns:
+            Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: Returns the selected price action, volume action, log-probability of the price action, log-probability of the volume action, and the state value, respectively.
+        """
         with torch.no_grad():
             # forward pass
             price_dist, volume_dist, state_value = self.policy_old.forward(state)
@@ -127,7 +256,15 @@ class PPOAgent:
         return price_action, volume_action, price_action_logprob.detach(), volume_action_logprob.detach(), state_value.detach()
 
     def update(self):
+        """
+        'update' method updates the policy - Performs the policy update using Proximal Policy Optimization (PPO).
 
+        Args:
+            None
+
+        Returns:
+            None. Updates the policy network parameters.
+        """
         # extract from the buffer
         old_rewards = self.buffer.rewards
         old_dones = self.buffer.dones
@@ -208,11 +345,31 @@ class PPOAgent:
 
         # clear buffer
         self.buffer.clear()
-    
+        
+    # 'save' method saves the model state
     def save(self, checkpoint_path):
+        """
+        Saves the current model parameters.
+
+        Args:
+            Checkpoint_path (str): The path where the model parameters will be saved.
+
+        Returns:
+            None.
+        """
         torch.save(self.policy_old.state_dict(), checkpoint_path)
    
+    # 'load' method loads the model state
     def load(self, checkpoint_path):
+        """
+        Loads the model parameters from the given path.
+
+        Args:
+            checkpoint_path (str): The path from where the model parameters will be loaded.
+
+        Returns:
+            None. Updates the model parameters with the loaded parameters.
+        """
         self.policy_old.load_state_dict(torch.load(checkpoint_path))
         self.policy.load_state_dict(torch.load(checkpoint_path))
 

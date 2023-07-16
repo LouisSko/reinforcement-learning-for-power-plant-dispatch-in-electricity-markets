@@ -1,3 +1,7 @@
+"""
+This is used for retrieving the input data of e.g. generation forecast and actuals as a baseline.
+"""
+
 from entsoe import EntsoePandasClient
 import pandas as pd
 import os
@@ -23,6 +27,15 @@ df_solar_cap_forecast_path = os.path.join(parent_directory, 'df_solar_cap_foreca
 
 
 def get_entsoe_client():
+    """
+    This function initializes and returns an ENTSO-E Pandas Client instance.
+
+    Args: None
+
+    Returns:
+
+    EntsoePandasClient: ENTSO-E Pandas Client instance.
+    """
     api_key = '3a72c137-c318-4dd5-ac00-2d3be87966a8'
     # api_key = '9ab2e188-d454-44be-bce7-ea9dc8863723'
     return EntsoePandasClient(api_key=api_key)
@@ -38,8 +51,13 @@ def get_demand(start, end):
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
     TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc.
 
+    Args:
+    start (pd.Timestamp): The start date and time in UTC.
+    end (pd.Timestamp): The end date and time in UTC.
+
     Returns:
-    Demand df for specified start and end date
+    df_load_prog (pd.DataFrame): DataFrame containing the unscaled forecasted load data.
+    df_load_prog_scaled (pd.DataFrame): DataFrame containing the scaled forecasted load data.
     """
     client = get_entsoe_client()
 
@@ -79,8 +97,16 @@ def get_vre(start, end):
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
     TODO Check the validity of ENTSO-E data, like are the renewable generation values always below the installed capacity, is the data complete etc.
 
+    This function retrieves the day-ahead generation forecasts for wind and solar for a specified time period.
+
+    Args:
+
+    start (pd.Timestamp): The start date and time in UTC.
+    end (pd.Timestamp): The end date and time in UTC.
     Returns:
-    Renewable Infeed array for specified start and end date
+
+    df_re_prog (pd.DataFrame): DataFrame containing the unscaled renewable energy generation forecast data.
+    df_re_prog_scaled (pd.DataFrame): DataFrame containing the scaled renewable energy generation forecast data.
     """
 
     client = get_entsoe_client()
@@ -122,8 +148,14 @@ def get_solar_actual(start, end):
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
     TODO Check the validity of ENTSO-E data, like are the renewable generation values always below the installed capacity, is the data complete etc.
 
+    This function retrieves the actual solar generation data for a specified time period.
+
+    Args:
+    start (pd.Timestamp): The start date and time in UTC.
+    end (pd.Timestamp): The end date and time in UTC.
+
     Returns:
-    Renewable Infeed array for specified start and end date
+    solar_actual_scaled (pd.DataFrame): DataFrame containing the scaled actual solar generation data.
     """
     client = get_entsoe_client()
 
@@ -163,8 +195,14 @@ def get_solar_estimate(start, end):
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
     TODO Check the validity of ENTSO-E data, like are the renewable generation values always below the installed capacity, is the data complete etc.
 
+    This function retrieves the estimated solar generation data for a specified time period.
+
+    Args:
+    start (pd.Timestamp): The start date and time in UTC.
+    end (pd.Timestamp): The end date and time in UTC.
+
     Returns:
-    Renewable Infeed array for specified start and end date
+    solar_estimate_scaled (pd.DataFrame): DataFrame containing the scaled estimated solar generation data.
     """
 
     client = get_entsoe_client()
@@ -207,8 +245,15 @@ def get_gen(start, end):
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
     TODO Check the validity of ENTSO-E data, like are the renewable generation values alsways below the installed capacity, is the data complete etc.
 
+    This function retrieves the day-ahead aggregated generation data for a specified time period.
+
+    Args:
+    start (pd.Timestamp): The start date and time in UTC.
+    end (pd.Timestamp): The end date and time in UTC.
+
     Returns:
-    Renewable Infeed array for specified start and end date
+    df_gen_prog (pd.DataFrame): DataFrame containing the unscaled aggregated generation data.
+    df_gen_prog_scaled (pd.DataFrame): DataFrame containing the scaled aggregated generation data.
     """
 
     client = get_entsoe_client()
@@ -239,8 +284,12 @@ def get_mcp(start, end):
     """
     Do some data manipulation from export from ENTSO-E, so get ready for the observation space
 
+    Args:
+    start (pd.Timestamp): The start date and time in UTC.
+    end (pd.Timestamp): The end date and time in UTC.
+
     Returns:
-    Day-Ahead market price array for specified start and end date
+    df_prices (pd.DataFrame): Day-Ahead market price array for specified start and end date
     in EUR/MWh
     """
 
@@ -262,16 +311,45 @@ def get_mcp(start, end):
 
 
 def aggregate_hourly(df):
+    """
+    This function aggregates the data hourly by summing.
+
+    Args:
+    df (pd.DataFrame): The data frame to be aggregated.
+
+    Returns:
+    df (pd.DataFrame): The hourly aggregated data frame.
+    """
     df = df.groupby([pd.Grouper(freq='1h')]).sum()
     return df
 
 
 def drop_incomplete_datapoints(df):
+    """
+    This function drops the days with an incomplete number of observations per day (not equal to 24).
+
+    Args:
+    df (pd.DataFrame): The data frame to be processed.
+
+    Returns:
+    df (pd.DataFrame): The processed data frame.
+    """
     df = df.groupby(df.index.date).filter(lambda x: len(x) == 24)
     return df
 
 
 def get_data(start=None, end=None, store=True):
+    """
+    This function fetches and processes different types of data for a specified time period and then stores the data in pickle files.
+
+    Args:
+    start (pd.Timestamp): The start date and time in UTC. If not provided, it defaults to 2018-01-01.
+    end (pd.Timestamp): The end date and time in UTC. If not provided, it defaults to the current date and time.
+    store (bool): Whether to store the data in pickle files or not. Defaults to True.
+
+    Returns: 
+    None
+    """
     # set start and end date if not provided
     if start is None:
         start = pd.Timestamp(year=2018, month=1, day=1, tz="europe/brussels")
@@ -310,6 +388,15 @@ def get_data(start=None, end=None, store=True):
 
 
 def read_processed_files():
+    """
+    This function reads the pickle files and returns the data as data frames.
+
+    Args: 
+    None
+
+    Returns:
+    Various pandas data frames: The stored data frames.
+    """
     # Read the pickle files and load as DataFrames
     df_demand = pd.read_pickle(df_demand_path)
     df_demand_scaled = pd.read_pickle(df_demand_scaled_path)
