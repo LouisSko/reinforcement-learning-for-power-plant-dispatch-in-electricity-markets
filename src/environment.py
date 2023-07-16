@@ -1,4 +1,8 @@
-# This is the programmed Environment in which the power plant acts
+"""
+This is the programmed Environment in which the power plant acts
+"""
+
+# Importing necessary libraries for the power plant environment
 import gymnasium as gym
 from gymnasium.spaces import Box, Discrete, Tuple, MultiDiscrete
 import numpy as np
@@ -8,12 +12,65 @@ import pandas as pd
 
 # define the market environment
 class market_env(gym.Env):
+    """
+    This is a custom environment for a power plant market simulation where the power plant can act.
+    It inherits the `gym.Env` class from OpenAI's gym module.
 
+    The environment takes in demand, renewable energy, capacity forecasts, actual capacity and prices data. 
+    It allows for actions in the form of bid price and bid volume in the market.
+
+    The environment is episodic and returns a reward for every step based on the profit calculated using market prices and the power plant's bid.
+
+    The observation space consists of past market data and the power plant's marginal costs. The action space consists of bid price and volume. 
+
+    Parameters
+    ----------
+    demand : pd.DataFrame
+        DataFrame containing demand data.
+    re : pd.DataFrame
+        DataFrame containing renewable energy generation data.
+    capacity_forecast : pd.DataFrame
+        DataFrame containing capacity forecast data.
+    capacity_actual : pd.DataFrame
+        DataFrame containing actual capacity data.
+    prices : pd.DataFrame
+        DataFrame containing market prices data.
+    eps_length : int, optional
+        Number of hours per episode, by default 24.
+    capacity : int, optional
+        Total capacity of the power plant, by default 200.
+    mc : int, optional
+        Marginal costs of the power plant, by default 30.
+    lower_bound : int, optional
+        Lower bound to rescale rewards, by default -10000.
+    upper_bound : int, optional
+        Upper bound to rescale rewards, by default 10000.
+    """
+    def __doc__(self):
+        """
+        Print a documentation string for this class
+        """
+        print("This is a custom environment for a power plant market simulation where the power plant can act.")
+
+    # Initialization of the environment   
     def __init__(self, demand, re, capacity_forecast, capacity_actual, prices, eps_length=24, capacity=200, mc=30,
                  lower_bound=-10000, upper_bound=10000, train=True):
         """
+        Initializes the environment with the given parameters.
 
+        Args:
+            demand: Pandas DataFrame of demand data.
+            re: Pandas DataFrame of renewable energy generation data.
+            capacity_forecast: Pandas DataFrame of capacity forecast data.
+            capacity_actual: Pandas DataFrame of actual capacity data.
+            prices: Pandas DataFrame of market prices data.
+            eps_length: Number of hours for each episode. Default is 24 hours.
+            capacity: The total capacity of the power plant.
+            mc: Marginal costs of the power plant.
+            lower_bound: Lower bound to rescale rewards. Default is -10000.
+            upper_bound: Upper bound to rescale rewards. Default is 10000.
         """
+        # All the necessary initializations and function calls go here.
         # get predefined stuff
         super().__init__()
 
@@ -150,15 +207,53 @@ class market_env(gym.Env):
         return concat
 
     def rescale_linear(self, profit, lower_bound, upper_bound):
+        """
+        Rescales the given profit to a reward in the range of -1 to 1.
+
+        Args:
+            profit (float): The profit to be rescaled.
+            lower_bound (float): The lower bound of the profit.
+            upper_bound (float): The upper bound of the profit.
+
+        Returns:
+            float: The rescaled profit.
+        """
         reward = (profit - lower_bound) / (upper_bound - lower_bound) * 2 - 1
         return reward
 
     def rescale_linearV2(self, profit, lower_bound, upper_bound, bid_price, mc):
+        """
+        Rescales the given profit to a reward in the range of -1 to 1.
+        This method also takes the bid price and marginal costs into account.
+
+        Args:
+            profit (float): The profit to be rescaled.
+            lower_bound (float): The lower bound of the profit.
+            upper_bound (float): The upper bound of the profit.
+            bid_price (float): The price at which the power plant bid in the market.
+            mc (float): The marginal cost.
+
+        Returns:
+            float: The rescaled profit.
+        """
         profit -= abs(mc-bid_price)
         reward = (profit - lower_bound) / (upper_bound - lower_bound) * 2 - 1
         return reward
 
     def rescale_log(self, profit, lower_bound, upper_bound):
+        """
+        Rescales the given profit to a reward using a logarithmic scale.
+
+        Args:
+            profit (float): The profit to be rescaled.
+            lower_bound (float): The lower bound of the profit.
+            upper_bound (float): The upper bound of the profit.
+
+        Returns:
+            float: The rescaled profit.
+        """
+
+        #handle the options of positive & negative profit
         if profit > 0:
             reward = np.log(profit + 1).item()
         elif profit < 0:
@@ -169,13 +264,18 @@ class market_env(gym.Env):
         return reward
 
     def step(self, action):
-
         """
-            Take a step in environment, which equals bidding in one hour.
-            We take the profit given by the market and convert it into reward
+        Takes a step in the environment, simulating bidding in the market for one hour.
+        It returns the new state of the environment, the reward for the step,
+        whether the step led to a terminal state, and additional info.
 
-            Returns:
-            The current observation and reward, as well as whether the state is terminal or not.
+        Args:
+            action (tuple): The action to take in the form of (bid price, bid volume).
+            TRAIN (bool): Whether the environment is being used for training or not.
+
+        Returns:
+            tuple: A tuple containing the new state, the reward, 
+                whether the state is terminal or not, whether the episode was truncated, and additional info.
         """
 
         # get bids from action
@@ -246,9 +346,16 @@ class market_env(gym.Env):
 
     def market_clearing(self, bid_price, bid_volume, actual_price):
         """
-            A function that calculates the output the day-ahead market would give when the selcted bid is submitted [EUR]
+        Simulates the market clearing given a bid price and volume, and the actual market price.
+        It returns the overall profit from the market in EUR and the realized market price in EUR/MWh.
 
-            Return: overall profit received from market in EUR and realised market price in EUR/MWh
+        Args:
+            bid_price (float): The price at which the power plant is bidding.
+            bid_volume (float): The volume that the power plant is bidding.
+            actual_price (float): The actual price in the market.
+
+        Returns:
+            float: The profit from the market.
         """
         if bid_price <= actual_price:
             # bid is successful
@@ -281,11 +388,13 @@ class market_env(gym.Env):
 
     def reset(self, **kwargs):
         """
-            The first method called before the experiment starts, as it resets the environment.
-            Also it is called between different learning session, alias tryiing out new algorithms etc
+        Resets the environment to its initial state.
 
-            Returns:
-            The first state from the environment.
+        Args:
+            TRAIN (bool): Whether the environment is being used for training or not.
+
+        Returns:
+            tuple: A tuple containing the initial state of the environment and an empty dictionary.
         """
         # reset profit to 0
         self.profit = 0
@@ -309,6 +418,7 @@ class market_env(gym.Env):
         Returns:
             The randomly selected date and time.
         """
+
 
         # If in training mode, pick a new random day.
         if self.train:
