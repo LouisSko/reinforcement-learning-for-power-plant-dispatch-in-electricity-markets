@@ -310,17 +310,18 @@ class market_env(gym.Env):
             self.avg_bid_price.append(self.bid_price)
 
         # calculate the profit
-        profit = self.market_clearing(self.bid_price, self.bid_volume, self.actual_price)
+        self.profit = self.market_clearing(self.bid_price, self.bid_volume, self.actual_price)
         profit_heuristic = self.market_clearing(self.bid_price_heuristic, self.bid_volume_heuristic, self.actual_price)
 
         # add profit to list
-        self.profit_list.append(profit)
+        self.profit_list.append(self.profit)
         self.profit_heuristic_list.append(profit_heuristic)
 
         # calculate reward -> scaled profit
-        self.reward = self.rescale_linearV2(profit, self.lower_bound, self.upper_bound, self.bid_price, self.mc)
-        # self.reward = self.rescale_linear(profit, self.lower_bound, self.upper_bound)
-        # self.reward = self.rescale_log(profit,  self.lower_bound, self.upper_bound)
+        # self.reward = self.rescale_linearV2(self.profit, self.lower_bound, self.upper_bound, self.bid_price, self.mc)
+        # self.reward = self.rescale_linear(self.profit, self.lower_bound, self.upper_bound)
+        self.reward = self.rescale_log(self.profit,  self.lower_bound, self.upper_bound)
+
 
         # print('bid price: ', bid_price, ' actual price: ', actual_price, 'bid volume: ', bid_volume, ' current: ',
         #      int(self.capacity_current), 'reward: ', reward, 'date: ', self.date)
