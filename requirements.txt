@@ -1,0 +1,12 @@
+pytest==7.4.0
+pytest-cov==4.1.0
+docstr-coverage==2.3.0
+gymnasium==0.28.1
+matplotlib==3.7.1
+numpy==1.24.1
+pandas==2.0.1
+tensorboard==2.13.0
+tensorboard-data-server==0.7.0
+torch-tb-profiler==0.4.1
+entsoe-py==0.5.9
+scikit-learn==1.2.2
