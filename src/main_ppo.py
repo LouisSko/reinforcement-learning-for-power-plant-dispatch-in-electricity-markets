@@ -164,14 +164,13 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
                                       i_episode)
                 else:
                     df = pd.DataFrame(env.avg_bid_price)
-                    print(df.value_counts())
 
                 print(
                     f'Episode {i_episode} out of {n_episodes}. Average Reward {np.mean(avg_rewards[-update_timestep:])}. Average Profit: {np.mean(env.profit_list[-update_timestep:])}')
 
         if train and (i_episode == 195000 or i_episode == 100000 or i_episode == 50000):
             print("saving model ... ")
-            save_path = os.path.join(checkpoint_path, 'model_{episode}_episodes_new.pth'.format(episode=i_episode))
+            save_path = os.path.join(checkpoint_path, 'model_{episode}_episodes.pth'.format(episode=i_episode))
             ppo_agent.save(save_path)
             print("model saved")
 
@@ -185,7 +184,8 @@ def rl_agent_run(hp_dict, device, train=True, model_checkpoint=None, tb_name='my
 
 
 if __name__ == '__main__':
-    model_checkpoint = os.path.join('../.', 'models/model_50000_episodes.pth')
+    # Note: Change the name of your model if you want to test the model
+    model_checkpoint = os.path.join('../.', 'models/final_model.pth')
 
     rl_agent_run(    # most hyperparameters are chosen based on the default of stable baselines 3
     hp_dict = {'lower_bound': -20000,  # lower bound for the reward scaling
@@ -198,5 +198,5 @@ if __name__ == '__main__':
                'gamma': 0.99,  # discount factor
                'lr_actor': 0.0002,  # learning rate for actor network
                'lr_critic': 0.0008  # learning rate for critic network
-               }, device=device, train=True, model_checkpoint=None, tb_name='log reward')
+               }, device=device, train=True, model_checkpoint=model_checkpoint, tb_name='log reward')
 

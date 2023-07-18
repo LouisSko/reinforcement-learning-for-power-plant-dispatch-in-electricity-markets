@@ -55,8 +55,8 @@ def train_a2c(train=True):
     # If in training mode, train the model
     if train:
         model = A2C("MlpPolicy", env, verbose=1, ent_coef=0.01, tensorboard_log=logdir)
-        model.learn(total_timesteps=1_200_000, tb_log_name="A2C")
-        model.save("../models/A2C/a2c_50000_episodes")
+        model.learn(total_timesteps=1000, tb_log_name="A2C")
+        model.save("../models/A2C/a2c_test")
     else:
         # If not in training mode, load the pre-trained model and evaluate it
         avg_rewards = []
@@ -65,7 +65,7 @@ def train_a2c(train=True):
         # Reset the environment
         obs, _ = env.reset()
 
-        # Perform steps in the environment and store rewards
+        # Perform 100 test steps in the environment and store rewards
         for i in range(100):
             action, _states = model.predict(obs)
             obs, reward, done, _, info = env.step(action)
