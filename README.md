@@ -11,6 +11,7 @@ Run python main_ppo.py
 The ppo agent is trained. Set train=False to test your model.
 
 Test coverage: pytest --cov-report term --cov=src tests/
+
 Doc Coverage: docstr-coverage src -i -f
 
 
