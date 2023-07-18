@@ -124,7 +124,7 @@ def test_step(market_env_fixture):
     TRAIN = True
 
     # Act
-    next_state, reward, is_terminal, truncated, info = env.step(action, TRAIN)
+    next_state, reward, is_terminal, truncated, info = env.step(action)
 
     # Assert
     assert isinstance(next_state, np.ndarray)
@@ -159,14 +159,13 @@ def test_market_clearing(market_env_fixture):
 def test_reset(market_env_fixture):
     # Arrange
     env = market_env_fixture
-    TRAIN = True
     env.profit = 100  # Set initial properties to non-default values
     env.iter = 5
     env.is_terminal = True
     env.time_list_days = pd.Series(pd.date_range(start='2021-01-01 00:00', end='2021-05-01 02:00', freq='d'))
 
     # Act
-    state, info = env.reset(TRAIN)
+    state, info = env.reset()
 
     # Assert
     assert env.profit == 0
@@ -179,15 +178,17 @@ def test_get_random_new_date(market_env_fixture):
 
     env = market_env_fixture
 
-    env.time_list_days = pd.Series(pd.date_range(start='2021-01-01 00:00', end='2021-05-01 02:00', freq='d'))
-
     # Check for training mode
-    random_date_train = env.get_random_new_date(TRAIN=True)
+    env.train = True
+    env.time_list_days = pd.Series(pd.date_range(start='2021-01-01 00:00', end='2021-05-01 02:00', freq='d'))
+    random_date_train = env.get_random_new_date()
     assert isinstance(random_date_train, pd.Timestamp)
     assert random_date_train.strftime('%m') != '09' or random_date_train.strftime('%Y') != '2021'
 
     # Check for testing mode
-    random_date_test = env.get_random_new_date(TRAIN=False)
+    env.train = False
+    env.time_list_days = pd.Series(pd.date_range(start='2021-09-01 00:00', end='2021-09-30 02:00', freq='d'))
+    random_date_test = env.get_random_new_date()
     assert isinstance(random_date_test, pd.Timestamp)
-    assert random_date_test.strftime('%m') == '07' and random_date_test.strftime('%Y') == '2021'
+    assert random_date_test.strftime('%m') == '09' and random_date_test.strftime('%Y') == '2021'
 

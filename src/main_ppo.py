@@ -198,5 +198,5 @@ if __name__ == '__main__':
                'gamma': 0.99,  # discount factor
                'lr_actor': 0.0002,  # learning rate for actor network
                'lr_critic': 0.0008  # learning rate for critic network
-               }, device=device, train=True, model_checkpoint=None, tb_name='test')
+               }, device=device, train=True, model_checkpoint=None, tb_name='log reward')
 
