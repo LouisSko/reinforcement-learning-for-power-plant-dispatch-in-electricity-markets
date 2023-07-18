@@ -4,7 +4,7 @@
 - pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 2. then install the requirements with pip install -r requirements.txt
 
-Then go to inside the folder src
+Then go inside the folder src
 
 Run python main_ppo.py
 The ppo agent is trained. 
