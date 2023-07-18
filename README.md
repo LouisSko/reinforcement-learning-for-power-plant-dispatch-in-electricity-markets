@@ -1,4 +1,13 @@
-# BDA-Challenge
+# BDA-Challenge 
+
+# Members
+- Skowronek, Louis 2222726
+- Karsch, Louis 2100754
+- Hartmann, Ingo 1953919
+- Röhrle, Dominik 1969773
+- Fleck, Leandra 2230564
+
+# Quickstart Guide
 1. Create a virtual environment: python -m venv {your_venv_name}
 
 2. Inside the virtual environment install pytorch first (windows):
@@ -15,7 +24,7 @@ Test coverage: pytest --cov-report term --cov=src tests/
 Doc Coverage: docstr-coverage src -i -f
 
 
-Here are the results:
+# Here are the results:
 
 ![image.png](./images/image1.png)
 
