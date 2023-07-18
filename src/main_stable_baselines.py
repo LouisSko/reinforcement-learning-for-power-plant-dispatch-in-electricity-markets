@@ -13,18 +13,30 @@ from stable_baselines3 import A2C
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.env_checker import check_env
 
-models_dir = "../models/A2C"
-logdir = "runs"
 
-if not os.path.exists(models_dir):
-    os.makedirs(models_dir)
+def train_a2c(train=True):
+    """
+    Trains or evaluates an Advantage Actor Critic (A2C) model based on the specified mode.
 
-if not os.path.exists(logdir):
-    os.makedirs(logdir)
+    The function creates or loads an A2C model, interacts with the environment to train or
+    evaluate the model, and logs the performance metrics.
 
-TRAIN = True
+    Args:
+        train (bool): Flag to decide whether to train a new model or evaluate an existing one.
+        By default, it's set to True which means the function will train a new model.
 
-if __name__ == '__main__':
+    Returns:
+        None
+    """
+
+    models_dir = "../models/A2C"
+    logdir = "runs"
+
+    if not os.path.exists(models_dir):
+        os.makedirs(models_dir)
+
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
 
     # Load processed files
     df_demand, df_demand_scaled, df_vre, df_vre_scaled, df_gen, df_gen_scaled, df_solar_cap_forecast, df_solar_cap_actual, df_mcp = read_processed_files()
@@ -35,13 +47,13 @@ if __name__ == '__main__':
     # initialize the market/gym environment
     env = market_env(demand=df_demand_scaled, re=df_vre_scaled, capacity_forecast=df_solar_cap_forecast,
                      capacity_actual=df_solar_cap_actual, prices=df_mcp, eps_length=24, capacity=200, mc=50,
-                     lower_bound=lower_bound, upper_bound=upper_bound, train=TRAIN)
+                     lower_bound=lower_bound, upper_bound=upper_bound, train=train)
 
     # Perform environment checking
     check_env(env)
 
     # If in training mode, train the model
-    if TRAIN:
+    if train:
         model = A2C("MlpPolicy", env, verbose=1, ent_coef=0.01, tensorboard_log=logdir)
         model.learn(total_timesteps=1_200_000, tb_log_name="A2C")
         model.save("../models/A2C/a2c_50000_episodes")
@@ -53,10 +65,13 @@ if __name__ == '__main__':
         # Reset the environment
         obs, _ = env.reset()
 
-        # Perform steps in the environment and store rewards     
+        # Perform steps in the environment and store rewards
         for i in range(100):
             action, _states = model.predict(obs)
             obs, reward, done, _, info = env.step(action)
             avg_rewards.append(reward)
-        
+
         print(np.mean(avg_rewards))
+
+if __name__ == '__main__':
+    train_a2c()
