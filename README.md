@@ -8,7 +8,7 @@
 - Fleck, Leandra 2230564
 
 # Quickstart Guide
-1. Create a virtual environment: python -m venv {your_venv_name}
+1. Create a virtual environment (Python Version 3.11): python -m venv {your_venv_name}
 
 2. Inside the virtual environment install pytorch first (windows):
 - pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
