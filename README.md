@@ -1,13 +1,18 @@
 # BDA-Challenge
+1. Create a virtual environment: python -m venv {your_venv_name}
 
-1. To run the code you need to install pytorch first (windows):
+2. Inside the virtual environment install pytorch first (windows):
 - pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
-2. then install the requirements with pip install -r requirements.txt
+3. then install the requirements with "pip install -r requirements.txt"
 
-Then go inside the folder src
+To train the model go inside the folder src
 
 Run python main_ppo.py
-The ppo agent is trained. 
+The ppo agent is trained. Set train=False to test your model.
+
+Test coverage: pytest --cov-report term --cov=src tests/
+Doc Coverage: docstr-coverage src -i -f
+
 
 Here are the results:
 
